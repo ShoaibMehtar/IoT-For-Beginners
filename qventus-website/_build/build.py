@@ -97,7 +97,7 @@ def nav_html(r, active):
     hvac = [(SVC[s]["name"].replace(" & Emergency Support", ""), s) for s in
             ["commercial-hvac", "industrial-hvac", "offshore-hvac", "marine-hvac", "commercial-refrigeration", "hvac-design-engineering", "preventive-maintenance"]]
     hvac.append(("Emergency Breakdown Support", "preventive-maintenance.html#emergency"[:-len(".html#emergency")]))
-    systems = [(SVC[s]["name"], s) for s in ["chiller-services", "cold-rooms", "air-quality-filtration", "mechanical-overhauling", "residential-hvac"]]
+    systems = [(SVC[s]["name"], s) for s in ["chiller-services", "mri-medical-chillers", "cold-rooms", "air-quality-filtration", "mechanical-overhauling", "residential-hvac"]]
     support = [(SVC[s]["name"], s) for s in ["offshore-containers", "event-support", "technical-manpower"]]
     mega = (col("HVAC Engineering", hvac) + col("Specialized Systems", systems) +
             col("Industrial Support", support)[:-6] + f'<a class="all" href="{r}services.html">ALL SERVICES →</a></div>')
@@ -122,7 +122,7 @@ def nav_html(r, active):
 def header(r, active):
     return f"""<a class="skip" href="#main">Skip to content</a>
 <div class="topbar"><div class="container">
-  <div class="tb-left"><span class="em">24/7 EMERGENCY</span><a href="tel:{PHONE_1_LINK}">{PHONE_1}</a><a class="hide-sm" href="mailto:{EMAIL}">{EMAIL}</a></div>
+  <div class="tb-left"><span class="em">OPEN 24/7</span><a href="tel:{PHONE_1_LINK}">{PHONE_1}</a><a class="hide-sm" href="tel:{PHONE_2_LINK}">{PHONE_2}</a><a class="hide-sm" href="mailto:{EMAIL}">{EMAIL}</a></div>
   <div class="tb-right"><span class="iso">ISO 9001 · ISO 45001 · ISO 14001</span><span>{ADDRESS.split(',')[2].strip()}, Qatar</span></div>
 </div></div>
 <header class="site-header"><div class="container">
@@ -145,7 +145,7 @@ def footer(r):
       <p>A professional HVAC engineering company trusted to design, maintain and optimise mission-critical cooling systems for commercial, industrial, marine and offshore facilities.</p>
       <div class="isos">{isos}</div></div>
     <div><h4>HVAC Engineering</h4><ul>{links(["commercial-hvac", "industrial-hvac", "offshore-hvac", "marine-hvac", "commercial-refrigeration", "hvac-design-engineering"])}</ul></div>
-    <div><h4>Systems &amp; Support</h4><ul>{links(["chiller-services", "cold-rooms", "preventive-maintenance", "offshore-containers", "event-support", "technical-manpower"])}</ul></div>
+    <div><h4>Systems &amp; Support</h4><ul>{links(["chiller-services", "mri-medical-chillers", "cold-rooms", "preventive-maintenance", "offshore-containers", "event-support", "technical-manpower"])}</ul></div>
     <div><h4>Company</h4><ul><li><a href="{r}about.html">About Q Ventus</a></li><li><a href="{r}projects.html">Featured Projects</a></li><li><a href="{r}services.html">All Services</a></li><li><a href="{r}index.html#industries">Industries</a></li><li><a href="{r}contact.html">Contact</a></li></ul></div>
     <div><h4>Get in Touch</h4><ul>
       <li><a href="tel:{PHONE_1_LINK}">{PHONE_1}</a></li><li><a href="tel:{PHONE_2_LINK}">{PHONE_2}</a></li>
@@ -164,10 +164,7 @@ def org_schema():
         "telephone": PHONE_1_LINK, "image": SITE_URL + "/assets/img/og-image.jpg",
         "address": {"@type": "PostalAddress", "streetAddress": "Office 81, Zone E, Al Mirqab Mall", "addressLocality": "Doha", "addressCountry": "QA"},
         "areaServed": "Qatar",
-        "openingHoursSpecification": [
-            {"@type": "OpeningHoursSpecification", "dayOfWeek": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"], "opens": "08:00", "closes": "17:00"},
-            {"@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "08:00", "closes": "13:00"},
-        ],
+        "openingHoursSpecification": [{"@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "opens": "00:00", "closes": "23:59"}],
     }
 
 
@@ -520,6 +517,16 @@ def build_services_hub():
          body, "services")
 
 
+def service_cta(s):
+    if not s.get("cta"):
+        return cta_band()
+    h, t, b1, b2 = s["cta"]
+    return f"""<section class="cta-band blueprint dark"><div class="container">
+<div><h2>{escape(h)}</h2><p>{escape(t)}</p></div>
+<div class="actions">{btn("{r}contact.html?service=" + quote(s["name"]), escape(b1))}{btn("{r}contact.html?service=" + quote(s["name"]) + "&amp;type=amc", escape(b2), "btn-ghost", False)}</div>
+</div></section>"""
+
+
 def build_service(s):
     chips = "".join(f'<span class="chip">{escape(c)}</span>' for c in s["chips"])
     hero = page_hero([("Home", "index.html"), ("Services", "services.html"), (s["name"], None)], escape(s["h1"]), escape(s["lead"]), s["img"],
@@ -546,7 +553,7 @@ def build_service(s):
             main += f'<div class="cont"><img src="{{r}}assets/img/{img}.jpg" alt="{escape(h)}" loading="lazy"><div><h3>{escape(h)}</h3><dl>{d}</dl></div></div>'
         main += "</div>"
     if s["scope"]:
-        label = "Scope of services" if s["group"] != "support" else "Key features"
+        label = s.get("scope_title") or ("Scope of services" if s["group"] != "support" else "Key features")
         main += f'<h2>{label}</h2><ul class="scope">' + "".join(f"<li>{icon('check')}{escape(x)}</li>" for x in s["scope"]) + "</ul>"
     if s.get("table"):
         main += '<h2>At a glance</h2><table class="spec-table">' + "".join(f"<tr><th>{escape(a)}</th><td>{escape(b)}</td></tr>" for a, b in s["table"]) + "</table>"
@@ -573,7 +580,7 @@ def build_service(s):
     rel = "".join(f'<a href="{{r}}services/{x}.html"><span><small>Related service</small>{escape(SVC[x]["name"])}</span><span>→</span></a>' for x in s["related"])
     body = hero + f"""<section class="section"><div class="container svc-layout"><div class="prose">{main}</div>{aside}</div></section>
 <section class="section-sm bg-paper"><div class="container"><div class="eyebrow">Related services</div><div class="related">{rel}</div></div></section>
-{cta_band()}"""
+{service_cta(s)}"""
     schema = [{"@context": "https://schema.org", "@type": "Service", "name": s["name"], "serviceType": s["name"], "description": s["desc"],
                "areaServed": "Qatar", "provider": {"@type": "HVACBusiness", "name": COMPANY, "url": SITE_URL + "/"}},
               {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
@@ -626,14 +633,15 @@ def build_contact():
                      "Request a site survey, a maintenance proposal or urgent breakdown support. We respond quickly — and for emergencies, immediately.", "rooftop-hvac-aerial")
     body += f"""<section class="section"><div class="container contact-grid">
 <div class="cinfo">
-  <div class="row em">{icon('alert')}<div><h4>24/7 Emergency breakdown</h4><p><a href="tel:{PHONE_1_LINK}">{PHONE_1}</a></p></div></div>
+  <div class="row em">{icon('alert')}<div><h4>24/7 Emergency breakdown</h4><p><a href="tel:{PHONE_1_LINK}">{PHONE_1}</a><br><a href="tel:{PHONE_2_LINK}">{PHONE_2}</a></p></div></div>
   <div class="row">{icon('phone')}<div><h4>Phone</h4><p><a href="tel:{PHONE_1_LINK}">{PHONE_1}</a><br><a href="tel:{PHONE_2_LINK}">{PHONE_2}</a></p></div></div>
   <div class="row">{wa_icon().replace('<svg', '<svg style="color:#25d366"')}<div><h4>WhatsApp</h4><p><a href="{wa_link()}" target="_blank" rel="noopener">Chat with an engineer →</a></p></div></div>
   <div class="row">{icon('mail')}<div><h4>Email</h4><p><a href="mailto:{EMAIL}">{EMAIL}</a></p></div></div>
   <div class="row">{icon('pin')}<div><h4>Office</h4><p>{escape(ADDRESS)}</p></div></div>
-  <div class="row">{icon('clock')}<div style="flex:1"><h4>Office hours</h4><table class="hours">{hours}</table></div></div>
+  <div class="row">{icon('clock')}<div style="flex:1"><h4>Availability</h4><table class="hours">{hours}</table></div></div>
 </div>
-<form class="quote" data-to="{EMAIL}" novalidate>
+<form class="quote" id="enquiry" action="{FORM_ENDPOINT}" method="POST" data-to="{EMAIL}" novalidate>
+  <input type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
   {eyebrow("Request a site survey")}
   <h2 style="font-size:1.8rem">Tell us about your facility</h2>
   <div class="fgrid">
@@ -645,8 +653,10 @@ def build_contact():
     <div><label for="f-loc">Facility / location</label><input id="f-loc" name="location" placeholder="e.g. Hotel, West Bay"></div>
     <div class="full"><label for="f-msg">How can we help? *</label><textarea id="f-msg" name="message" required placeholder="Equipment, capacity, symptoms, timeline…"></textarea></div>
   </div>
-  <div style="margin-top:22px"><button class="btn btn-primary" type="submit">Send Enquiry {icon('arrow')}</button></div>
-  <p class="form-note">Submitting opens your email app with the details filled in. For urgent breakdowns please call {PHONE_1}.</p>
+  <div class="form-actions"><button class="btn btn-primary" type="submit">Send Enquiry {icon('arrow')}</button>
+    <button class="btn btn-outline" type="button" data-action="email">{icon('mail')} Send by Email Instead</button></div>
+  <div class="form-status" role="status" aria-live="polite"></div>
+  <p class="form-note">Enquiries go straight to {EMAIL}. Prefer your own email app? Use “Send by Email Instead”, or write to <a href="mailto:{EMAIL}">{EMAIL}</a>. For urgent breakdowns call {PHONE_1} (24/7).</p>
 </form>
 </div></section>
 <section><iframe class="map" title="Q Ventus office location — Al Mirqab Mall, Doha" loading="lazy" referrerpolicy="no-referrer-when-downgrade"

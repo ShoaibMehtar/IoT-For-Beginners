@@ -20,5 +20,5 @@ After editing, rebuild the pages:
 then open http://localhost:8000
 
 ## Notes
-- The contact form opens the visitor's email app addressed to inquiry@qventus.qa. To receive submissions directly, connect a form service (e.g. Formspree) or your host's form handler.
+- The enquiry form sends submissions to inquiry@qventus.qa through FormSubmit (formsubmit.co). The first time someone submits it, FormSubmit emails inquiry@qventus.qa an activation link; click it once and all later enquiries arrive automatically. Visitors can also choose "Send by Email Instead", which opens their own email app.
 - Images and client logos were taken from the company profile PDF (`assets/img`).

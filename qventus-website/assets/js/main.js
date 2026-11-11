@@ -67,26 +67,55 @@
     document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
   }
 
-  // Quote form: no server yet, so open the visitor's email app with the details filled in
+  // Enquiry form: sends online (FormSubmit), with an "email instead" option and email fallback
   var form = document.querySelector('form.quote');
   if (form) {
+    var status = form.querySelector('.form-status');
+    var submitBtn = form.querySelector('button[type="submit"]');
+    var params = new URLSearchParams(window.location.search);
+    var pre = params.get('service');
+    if (pre) {
+      var sel = form.querySelector('select[name="service"]');
+      Array.prototype.forEach.call(sel.options, function (o) { if (o.text === pre) sel.value = o.text; });
+    }
+    if (params.get('type') === 'amc') {
+      var msg = form.querySelector('textarea[name="message"]');
+      if (!msg.value) msg.value = 'We would like to request an Annual Maintenance Contract (AMC) proposal.\n\nEquipment / site details: ';
+    }
+    var show = function (cls, text) { status.className = 'form-status ' + cls; status.textContent = text; };
+    var mailto = function () {
+      var d = new FormData(form);
+      var subject = 'Enquiry: ' + (d.get('service') || 'General') + ' — ' + (d.get('company') || d.get('name') || 'Website');
+      var lines = ['Name: ' + (d.get('name') || ''), 'Company: ' + (d.get('company') || '-'), 'Email: ' + (d.get('email') || ''),
+        'Phone: ' + (d.get('phone') || '-'), 'Service: ' + (d.get('service') || '-'), 'Facility / location: ' + (d.get('location') || '-'), '', d.get('message') || ''];
+      window.location.href = 'mailto:' + form.getAttribute('data-to') + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(lines.join('\n'));
+    };
+    form.querySelector('[data-action="email"]').addEventListener('click', mailto);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (!form.reportValidity()) return;
       var d = new FormData(form);
-      var subject = 'Enquiry: ' + (d.get('service') || 'General') + ' — ' + (d.get('company') || d.get('name'));
-      var lines = [
-        'Name: ' + d.get('name'),
-        'Company: ' + (d.get('company') || '-'),
-        'Email: ' + d.get('email'),
-        'Phone: ' + (d.get('phone') || '-'),
-        'Service: ' + (d.get('service') || '-'),
-        'Facility / location: ' + (d.get('location') || '-'),
-        '',
-        d.get('message')
-      ];
-      window.location.href = 'mailto:' + form.getAttribute('data-to') +
-        '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(lines.join('\n'));
+      if (d.get('_honey')) return;
+      var payload = {};
+      d.forEach(function (v, k) { if (k !== '_honey') payload[k] = v; });
+      payload._subject = 'Website enquiry: ' + (payload.service || 'General') + ' — ' + (payload.company || payload.name);
+      payload._template = 'table';
+      payload._replyto = payload.email;
+      submitBtn.disabled = true;
+      show('', 'Sending…');
+      fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(payload) })
+        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (res.ok && String(res.j.success) === 'true') {
+            show('ok', 'Thank you — your enquiry has been sent. Our team will contact you shortly.');
+            form.reset();
+          } else { throw new Error('send failed'); }
+        })
+        .catch(function () {
+          show('err', 'We could not send the form online. Opening your email app instead…');
+          setTimeout(mailto, 900);
+        })
+        .then(function () { submitBtn.disabled = false; });
     });
   }
 

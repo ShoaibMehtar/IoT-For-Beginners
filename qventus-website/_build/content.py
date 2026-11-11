@@ -5,14 +5,17 @@ SITE_URL = "https://www.qventus.qa"
 COMPANY = "Q Ventus"
 EMAIL = "inquiry@qventus.qa"
 # Phone numbers exactly as printed in the company profile.
-PHONE_1 = "+974 506605460"
-PHONE_1_LINK = "+974506605460"
-PHONE_2 = "+974 6649 1649"
-PHONE_2_LINK = "+97466491649"
-WHATSAPP = "974506605460"          # digits only, used for wa.me links
+PHONE_1 = "+974 6649 1649"
+PHONE_1_LINK = "+97466491649"
+PHONE_2 = "+974 5066 0546"
+PHONE_2_LINK = "+97450660546"
+WHATSAPP = "97466491649"           # digits only, used for wa.me links
+# Enquiry form: submissions are delivered to EMAIL via FormSubmit (formsubmit.co).
+# The first submission triggers a one-time activation email to EMAIL that must be confirmed.
+FORM_ENDPOINT = "https://formsubmit.co/ajax/" + "inquiry@qventus.qa"
 ADDRESS = "Office 81, Zone E, Al Mirqab Mall, Doha, Qatar"
 MAP_QUERY = "Al Mirqab Mall, Doha, Qatar"
-HOURS = [("Sunday – Thursday", "08:00 – 17:00"), ("Saturday", "08:00 – 13:00"), ("Friday", "Closed")]
+HOURS = [("Every day, including holidays", "Open 24 / 7")]
 ISO = [
     ("ISO 9001:2015", "Quality Management", "Documented, audited processes for consistent engineering quality from survey to handover."),
     ("ISO 45001:2018", "Occupational Health & Safety", "Safety management embedded in every site, plant room and offshore operation we work in."),
@@ -41,9 +44,9 @@ SERVICES = [
         chips=["Chilled water", "VRF / VRV", "Package rooftop units", "Ducted AHUs", "Cooling towers"],
         body=[
             "Hotels, hospitals, offices and retail centres in Qatar run their cooling plant close to full load for most of the year. When a system underperforms, guests notice, clinical spaces drift out of specification and tenants complain. Q Ventus approaches commercial HVAC as an engineering discipline: we start from the heat load and the duty the building actually sees, then select, install and maintain equipment to hold that duty reliably.",
-            "Our teams work across the full commercial plant — from rooftop package units and ducted air handling units to air-cooled and water-cooled chiller systems, cooling towers and chilled water circulation pumps — including dedicated process chillers for MRI machines in healthcare facilities.",
+            "Our teams work across the full commercial plant — from rooftop package units and ducted air handling units to air-cooled and water-cooled chiller systems, cooling towers and chilled water circulation pumps — including dedicated medical process chillers for MRI scanners in healthcare facilities (see our MRI & medical chiller service).",
         ],
-        scope=["Package rooftop units (RTUs)", "Ducted air handling units", "Air-cooled & water-cooled chillers", "Cooling towers", "Chilled water circulation pumps", "MRI chillers for healthcare", "VRF / VRV systems", "Cassette, ducted & floor-standing units"],
+        scope=["Package rooftop units (RTUs)", "Ducted air handling units", "Air-cooled & water-cooled chillers", "Cooling towers", "Chilled water circulation pumps", "MRI & medical process chillers", "VRF / VRV systems", "Cassette, ducted & floor-standing units"],
         table=[("Building types", "Hotels, hospitals, offices, malls, restaurants, fitness centres"), ("Service model", "Design · Supply · Install · Commission · AMC"), ("Typical works", "New installations, plant replacement, retrofits, performance upgrades"), ("Support", "Preventive maintenance and 24/7 breakdown response")],
         project="chiller-plant-hotel", related=["chiller-services", "preventive-maintenance", "hvac-design-engineering"],
     ),
@@ -182,6 +185,45 @@ SERVICES = [
         project="cold-storage", related=["commercial-refrigeration", "preventive-maintenance", "industrial-hvac"],
     ),
     dict(
+        slug="mri-medical-chillers", group="systems", icon="thermo", img="condenser-bank",
+        name="MRI & Medical Process Chillers",
+        card="Supply, installation and 24/7 maintenance of MRI and diagnostic imaging chillers.",
+        title="MRI Chiller Supplier & Medical Process Chiller Maintenance in Qatar",
+        desc="MRI chiller supplier in Qatar: medical process chillers for MRI, CT and LINAC — supply, installation, AMC and 24/7 emergency maintenance in Doha, rated for 52 °C ambient.",
+        h1="Medical Process Chillers & MRI Cooling Solutions",
+        lead="Precision cooling supply, installation and 24/7 maintenance for healthcare facilities in Qatar — engineered to OEM specifications and rated for extreme Gulf ambient temperatures.",
+        chips=["MRI · CT · LINAC", "Up to 52 °C ambient", "Dual-circuit redundancy", "BMS integration", "24/7 AMC"],
+        body=[
+            "Diagnostic imaging equipment — MRI scanners, CT systems and linear accelerators — requires uninterrupted, precision thermal management. Even a brief cooling interruption can cause costly scanner downtime or a critical helium quench.",
+            "Q Ventus provides end-to-end supply, installation and preventive maintenance of dedicated medical process chillers across Doha and Qatar. Our systems are engineered to meet strict OEM flow, pressure and temperature tolerances and to perform reliably in Gulf summers of 50–52 °C ambient.",
+        ],
+        cols=[
+            ("Supply & Turnkey Installation", [
+                "OEM-compatible air-cooled and water-cooled medical chillers, sized to the thermal load of leading imaging platforms including Siemens, GE HealthCare, Philips and Canon.",
+                "High-ambient rated systems for continuous 24/7 operation in summer conditions up to 52 °C.",
+                "Built-in redundancy: dual-pump configurations, dual refrigeration circuits and automatic city-water bypass panels for zero-downtime protection.",
+                "Complete hydronic integration: insulated buffer tanks, glycol loops, precision flow controls and BMS alarm integration.",
+            ]),
+            ("Preventive Maintenance (AMC)", [
+                "Scheduled inspection of compressors, refrigerant pressures and condenser coils.",
+                "Water quality, glycol concentration and flow / temperature sensor checks.",
+                "Technicians following biomedical infrastructure protocols — not standard comfort-cooling routines.",
+                "Annual Maintenance Contracts built around your scanner's uptime requirements.",
+            ]),
+            ("24/7 Emergency & Spares", [
+                "Rapid on-site dispatch across Qatar under agreed Service Level Agreements (SLAs).",
+                "Protection of MRI cold-head and gradient cooling systems.",
+                "Genuine replacement pumps, controllers and heat exchangers.",
+                "Retrofits and upgrades for ageing imaging chillers.",
+            ]),
+        ],
+        scope=["OEM-compliant flow, pressure & temperature tolerances", "Local Qatar presence and fast response", "Thermal load sizing to commissioning to AMC — one partner", "Dual pumps & dual refrigeration circuits", "Automatic city-water bypass panels", "BMS alarm integration"],
+        scope_title="Why healthcare facilities partner with us",
+        table=[("Equipment served", "MRI scanners, CT systems, linear accelerators (LINAC)"), ("Imaging platforms", "Siemens, GE HealthCare, Philips, Canon"), ("Chiller types", "Air-cooled and water-cooled medical process chillers"), ("Design ambient", "Up to 52 °C, continuous 24/7 duty"), ("Service model", "Supply · Install · Commission · AMC · 24/7 emergency")],
+        cta=("Request a technical consultation or AMC quote", "Talk to our medical cooling team about a new chiller, a replacement or an Annual Maintenance Contract.", "Contact Our Medical Cooling Team", "Request an AMC Proposal"),
+        project=None, related=["chiller-services", "preventive-maintenance", "commercial-hvac"],
+    ),
+    dict(
         slug="air-quality-filtration", group="systems", icon="filter", img="air-filters",
         name="Air Quality & Filtration",
         card="Fabrication and supply of pre, fine, HEPA and bag filters, plus duct and coil cleaning.",
@@ -310,7 +352,7 @@ GROUPS = [
 SYSTEM_LINKS = [
     ("Chiller Systems", "chiller-services"), ("Cooling Towers", "chiller-services"), ("AHUs & FCUs", "industrial-hvac"),
     ("Cold Rooms", "cold-rooms"), ("Blast Chillers", "commercial-refrigeration"), ("VRF / VRV & Package Units", "commercial-hvac"),
-    ("Air Quality Solutions", "air-quality-filtration"), ("Motor, Pump & Compressor Overhauls", "mechanical-overhauling"),
+    ("MRI & Medical Process Chillers", "mri-medical-chillers"), ("Air Quality Solutions", "air-quality-filtration"), ("Motor, Pump & Compressor Overhauls", "mechanical-overhauling"),
 ]
 
 CAPABILITIES = [
@@ -321,7 +363,7 @@ CAPABILITIES = [
     ("package", "Package Units", "Packaged DX air conditioning"),
     ("rooftop", "Rooftop Units", "Package rooftop units (RTU)"),
     ("vrf", "VRF / VRV Systems", "Variable refrigerant flow systems"),
-    ("thermo", "Precision Cooling", "MRI chillers and close-control cooling"),
+    ("thermo", "Precision Cooling", "MRI & medical process chillers"),
     ("snow", "Cold Rooms", "Chiller and freezer rooms to −22 °C"),
     ("blast", "Blast Freezers", "Blast chillers and rapid freezing"),
     ("anchor", "Marine HVAC", "Chilled water and self-contained marine AC"),
