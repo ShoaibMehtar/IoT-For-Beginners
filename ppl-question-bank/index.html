@@ -1,0 +1,901 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>Clearway PPL</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one centred study column under a sticky chart-style header; tabs for New test / Saved / Completed. */
+:root {
+  --paper: #f2f5f7;
+  --surface: #ffffff;
+  --surface-2: #e8eef2;
+  --ink: #15222c;
+  --muted: #586a78;
+  --line: #d3dce3;
+  --accent: #a3215f;      /* VFR-chart magenta */
+  --accent-ink: #ffffff;
+  --accent-soft: #f6e4ed;
+  --blue: #1d5c94;        /* chart aeronautical blue */
+  --blue-soft: #e2edf7;
+  --ok: #1d7748;
+  --ok-soft: #e1f2e8;
+  --bad: #b2261d;
+  --bad-soft: #f9e3e1;
+  --warn: #9a6200;
+  --warn-soft: #f8eed9;
+  --shadow: 0 1px 2px rgba(21, 34, 44, .06), 0 4px 16px rgba(21, 34, 44, .05);
+  --f-display: "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d141a; --surface: #151f27; --surface-2: #1c2832; --ink: #e5ecf1; --muted: #93a4b1;
+    --line: #2a3a47; --accent: #e56ba7; --accent-ink: #1a0d14; --accent-soft: #3a1c2b;
+    --blue: #74abdd; --blue-soft: #1a2c3d; --ok: #55c58e; --ok-soft: #15301f; --bad: #f2776e;
+    --bad-soft: #3a1a18; --warn: #e2ad52; --warn-soft: #34280f; --shadow: 0 1px 2px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d141a; --surface: #151f27; --surface-2: #1c2832; --ink: #e5ecf1; --muted: #93a4b1;
+  --line: #2a3a47; --accent: #e56ba7; --accent-ink: #1a0d14; --accent-soft: #3a1c2b;
+  --blue: #74abdd; --blue-soft: #1a2c3d; --ok: #55c58e; --ok-soft: #15301f; --bad: #f2776e;
+  --bad-soft: #3a1a18; --warn: #e2ad52; --warn-soft: #34280f; --shadow: 0 1px 2px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; line-height: 1.15; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.1rem; }
+p { margin: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.eyebrow { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* Header */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-inner, .wrap { max-width: 900px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top-inner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+.brand-mark { width: 30px; height: 30px; flex: none; }
+.brand-name { font-family: var(--f-display); font-weight: 700; font-size: 1.25rem; letter-spacing: .04em; text-transform: uppercase; }
+.brand-name span { color: var(--accent); }
+.acct { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--blue-soft); color: var(--blue); font-weight: 600; font-size: .8rem; flex: none; }
+.tabs { display: flex; gap: 4px; width: 100%; overflow-x: auto; scrollbar-width: none; }
+.tab { border: 0; background: none; padding: 8px 12px; border-radius: 8px 8px 0 0; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab .count { font-family: var(--f-mono); font-size: .72rem; background: var(--surface-2); color: var(--muted); padding: 1px 6px; border-radius: 10px; }
+
+.wrap { padding-block: 24px 64px; display: flex; flex-direction: column; gap: 20px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 9px 16px; border-radius: 8px; font-weight: 500; min-height: 40px; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.ghost { border-color: transparent; background: none; }
+.btn.danger { color: var(--bad); }
+.btn.sm { min-height: 32px; padding: 5px 12px; font-size: .88rem; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.spacer { flex: 1; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); }
+.section-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.section-head p { flex-basis: 100%; }
+
+/* Login */
+.login { min-height: 100%; display: grid; place-items: center; padding-block: 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.login-box { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 18px; }
+.login-hero { display: flex; flex-direction: column; gap: 8px; }
+.login-hero h1 { font-size: 2.2rem; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: .85rem; font-weight: 500; }
+.field input, .field select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 12px; min-height: 42px; width: 100%; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border-radius: 9px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: none; border-radius: 7px; padding: 8px; font-weight: 500; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.err { color: var(--bad); font-size: .88rem; }
+.note { font-size: .82rem; color: var(--muted); }
+.cloud-id { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+.divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .8rem; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* New test */
+.subj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.subj { display: flex; gap: 10px; align-items: center; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; }
+.subj[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.subj .code { font-family: var(--f-mono); font-size: .78rem; color: var(--accent); min-width: 2.2em; }
+.subj .nm { font-weight: 500; flex: 1; min-width: 0; }
+.subj .n { font-family: var(--f-mono); font-size: .75rem; color: var(--muted); }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mode { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.mode[aria-pressed="true"] { border-color: var(--blue); background: var(--blue-soft); }
+.mode b { font-weight: 600; }
+.mode span { font-size: .8rem; color: var(--muted); }
+
+/* Progress list */
+.prog { display: grid; gap: 10px; }
+.prog-row { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) 4.5em; gap: 10px; align-items: center; font-size: .9rem; }
+.bar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; position: relative; }
+.bar i { position: absolute; inset: 0 auto 0 0; background: var(--blue); border-radius: 4px; }
+.bar i.pass { background: var(--ok); }
+.bar i.fail { background: var(--warn); }
+.bar::after { content: ""; position: absolute; top: -2px; bottom: -2px; left: 75%; width: 2px; background: var(--muted); opacity: .45; }
+.prog-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.prog-name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Test lists */
+.list { display: flex; flex-direction: column; gap: 10px; }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.item-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.item-title { font-weight: 600; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .83rem; color: var(--muted); }
+.meta .mono { font-size: .8rem; }
+.item-side { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.score { font-family: var(--f-display); font-weight: 700; font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1; }
+.pill { display: inline-flex; align-items: center; font-family: var(--f-mono); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; font-weight: 500; }
+.pill.pass { background: var(--ok-soft); color: var(--ok); }
+.pill.fail { background: var(--bad-soft); color: var(--bad); }
+.pill.mode-exam { background: var(--blue-soft); color: var(--blue); }
+.pill.mode-practice { background: var(--surface-2); color: var(--muted); }
+.mini-bar { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; max-width: 220px; }
+.mini-bar i { display: block; height: 100%; background: var(--accent); }
+.empty { text-align: center; padding: 36px 20px; display: flex; flex-direction: column; gap: 10px; align-items: center; color: var(--muted); }
+.empty svg { width: 56px; height: 56px; color: var(--line); }
+.confirm-inline { display: flex; gap: 6px; align-items: center; font-size: .85rem; }
+
+/* Runner */
+.run-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.timer { font-family: var(--f-mono); font-size: .95rem; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); font-variant-numeric: tabular-nums; }
+.timer.low { background: var(--bad-soft); color: var(--bad); }
+.track { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.track i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
+.qcard { display: flex; flex-direction: column; gap: 16px; }
+.qtext { font-size: 1.1rem; font-weight: 500; line-height: 1.5; }
+.options { display: flex; flex-direction: column; gap: 8px; }
+.opt { display: grid; grid-template-columns: 2em minmax(0, 1fr) auto; gap: 10px; align-items: start; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 12px 14px; }
+.opt:hover:not(:disabled) { border-color: var(--muted); }
+.opt .ltr { font-family: var(--f-mono); font-weight: 500; width: 1.8em; height: 1.8em; border-radius: 6px; display: grid; place-items: center; background: var(--surface-2); font-size: .85rem; }
+.opt[aria-pressed="true"] { border-color: var(--blue); background: var(--blue-soft); }
+.opt[aria-pressed="true"] .ltr { background: var(--blue); color: var(--surface); }
+.opt.correct { border-color: var(--ok); background: var(--ok-soft); }
+.opt.correct .ltr { background: var(--ok); color: var(--surface); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.opt.wrong .ltr { background: var(--bad); color: var(--surface); }
+.opt:disabled { cursor: default; }
+.opt .mark { font-family: var(--f-mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; align-self: center; }
+.opt.correct .mark { color: var(--ok); }
+.opt.wrong .mark { color: var(--bad); }
+.explain { border-left: 3px solid var(--blue); background: var(--blue-soft); padding: 12px 14px; border-radius: 0 8px 8px 0; font-size: .93rem; display: flex; flex-direction: column; gap: 4px; }
+.verdict { font-weight: 600; }
+.verdict.ok { color: var(--ok); }
+.verdict.no { color: var(--bad); }
+.run-nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.flag-on { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+.qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; }
+.qdot { height: 38px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); font-family: var(--f-mono); font-size: .8rem; position: relative; }
+.qdot.ans { background: var(--blue-soft); border-color: var(--blue); }
+.qdot.ok { background: var(--ok-soft); border-color: var(--ok); }
+.qdot.no { background: var(--bad-soft); border-color: var(--bad); }
+.qdot.cur { outline: 2px solid var(--accent); outline-offset: 1px; }
+.qdot.flag::after { content: ""; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--line); }
+.legend .l-ans::before { background: var(--blue-soft); border-color: var(--blue); }
+.legend .l-flag::before { background: var(--warn); border-color: var(--warn); border-radius: 50%; }
+
+/* Result & review */
+.result-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: center; }
+.gauge { width: 120px; height: 120px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat b { font-family: var(--f-display); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: .85rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.rq { display: flex; flex-direction: column; gap: 12px; }
+.rq-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* Modal & toast */
+.scrim { position: fixed; inset: 0; background: rgba(10, 18, 24, .45); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.dialog { background: var(--surface); border-radius: 14px; padding: 22px; max-width: 420px; width: 100%; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+.dialog .row { justify-content: flex-end; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 10px; z-index: 60; font-size: .9rem; max-width: calc(100% - 32px); }
+.loading { min-height: 60vh; display: grid; place-items: center; color: var(--muted); }
+
+@media (max-width: 560px) {
+  h1 { font-size: 1.6rem; }
+  .item { grid-template-columns: minmax(0, 1fr); }
+  .item-side { justify-content: flex-start; }
+  .result-hero { grid-template-columns: minmax(0, 1fr); justify-items: start; }
+  .run-nav .btn { flex: 1; }
+  .acct .who { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div id="app"><div class="loading">Loading…</div></div>
+<div id="layer"></div>
+
+<script>
+/* ---------- Question bank (original questions written to the EASA PPL(A) syllabus) ----------
+   Format: [subject, question, [A, B, C, D], indexOfCorrect, explanation] */
+const SUBJECTS = [
+  { id: "ALW", code: "010", name: "Air Law" },
+  { id: "AGK", code: "020", name: "Aircraft General Knowledge" },
+  { id: "FPP", code: "030", name: "Flight Performance & Planning" },
+  { id: "HPL", code: "040", name: "Human Performance" },
+  { id: "MET", code: "050", name: "Meteorology" },
+  { id: "NAV", code: "060", name: "Navigation" },
+  { id: "OPS", code: "070", name: "Operational Procedures" },
+  { id: "POF", code: "080", name: "Principles of Flight" },
+  { id: "COM", code: "090", name: "Communications" }
+];
+const RAW = [
+  // 010 Air Law
+  ["ALW", "Under SERA, what is the minimum flight visibility for VFR flight in Class G airspace at or below 3000 ft AMSL (or 1000 ft above terrain, whichever is higher)?", ["1500 m", "5 km", "8 km", "3 km"], 1, "SERA.5001: below 3000 ft AMSL / 1000 ft AGL in Class F and G the minimum is 5 km, clear of cloud and with the surface in sight. A competent authority may permit reduced visibility (not less than 1500 m) for aircraft flying at 140 kt IAS or less."],
+  ["ALW", "Under SERA, what are the VMC minima at and above FL100?", ["5 km visibility, 1500 m horizontally and 1000 ft vertically from cloud", "8 km visibility, clear of cloud", "8 km visibility, 1500 m horizontally and 1000 ft vertically from cloud", "10 km visibility, 1000 m horizontally and 500 ft vertically from cloud"], 2, "At and above FL100 (in classes where VFR is permitted) SERA requires 8 km flight visibility and 1500 m horizontal / 1000 ft vertical separation from cloud. Below FL100 the visibility figure drops to 5 km."],
+  ["ALW", "Which transponder code indicates radio communication failure?", ["7500", "7600", "7700", "7000"], 1, "7600 = radio failure. 7500 = unlawful interference, 7700 = emergency. 7000 is the standard VFR conspicuity code in most EASA states."],
+  ["ALW", "Two aeroplanes are converging at approximately the same altitude. Which one must give way?", ["The faster aeroplane", "The one that has the other on its left", "The one that has the other on its right", "The lower aeroplane"], 2, "SERA.3210: when converging at approximately the same level, the aircraft that has the other on its right gives way. Simple memory aid: 'if it's on your right, it has the right of way'."],
+  ["ALW", "Two aeroplanes are approaching head-on. What action should each pilot take?", ["Both turn left", "Both turn right", "The higher aircraft climbs", "The aircraft on the right holds heading"], 1, "When approaching head-on or approximately so, and there is danger of collision, each aircraft alters its heading to the right."],
+  ["ALW", "An aircraft overtaking another must keep out of its way by:", ["Climbing above it", "Altering heading to the left", "Altering heading to the right", "Descending below it"], 2, "SERA.3210: an aircraft that is being overtaken has the right of way, and the overtaking aircraft keeps out of the way by altering its heading to the right, whether climbing, descending or level."],
+  ["ALW", "Except for take-off and landing, the minimum height over a congested area of a city or town under VFR is:", ["500 ft above the highest obstacle within 150 m", "1000 ft above the highest obstacle within 600 m", "1500 ft above ground level", "1000 ft above ground level directly below"], 1, "SERA.5005(f): over congested areas, at least 1000 ft above the highest obstacle within a radius of 600 m from the aircraft. Elsewhere the minimum is 500 ft above ground or water (or above the highest obstacle within 150 m)."],
+  ["ALW", "To carry passengers as pilot-in-command, a PPL(A) holder must have completed in the preceding 90 days at least:", ["1 take-off and landing", "3 take-offs, approaches and landings in the same type or class", "5 take-offs and landings at night", "2 hours of flight time"], 1, "FCL.060(b): at least 3 take-offs, approaches and landings as sole manipulator of the controls in an aircraft of the same type or class (or an FFS) in the preceding 90 days."],
+  ["ALW", "Which medical certificate is required to exercise the privileges of a PPL(A)?", ["Class 1", "Class 2", "Class 3", "LAPL medical"], 1, "Part-MED: a PPL requires at least a Class 2 medical certificate. A LAPL medical is enough only for the LAPL. Class 1 is required for CPL and ATPL."],
+  ["ALW", "What is the validity period of a single-engine piston (SEP land) class rating?", ["12 months", "24 months", "36 months", "60 months"], 1, "Single-pilot single-engine class ratings, including SEP(land), are valid for 24 months. They can be revalidated by experience (12 h including 1 h with an instructor in the final 12 months) or by a proficiency check."],
+
+  // 020 Aircraft General Knowledge
+  ["AGK", "Under which conditions is carburettor icing most likely?", ["OAT −20 °C, dry air, full power", "OAT +15 °C, high humidity, low power descent", "OAT +35 °C, low humidity, climb", "OAT −5 °C, clear sky, take-off power"], 1, "Fuel evaporation and the venturi pressure drop can cool the air by 20 °C or more. Serious icing is possible from about −10 °C to +30 °C with high humidity, and is worst at low power, when the partly closed throttle valve adds a further restriction."],
+  ["AGK", "During a pitot-static check the pitot tube is blocked but the static vent and drain hole are clear. In a climb, the airspeed indicator will:", ["Read zero", "Over-read, acting like an altimeter", "Under-read", "Remain correct"], 1, "With pitot pressure trapped and static pressure falling in the climb, the difference (dynamic pressure) appears to increase, so the ASI over-reads in the climb and under-reads in the descent, behaving like an altimeter."],
+  ["AGK", "If the static source becomes blocked in flight, which instrument indications are affected?", ["ASI only", "Altimeter and VSI only", "ASI, altimeter and VSI", "Attitude indicator and turn coordinator"], 2, "All three pressure instruments use static pressure. The altimeter freezes, the VSI shows zero, and the ASI under-reads in a climb and over-reads in a descent. Use the alternate static source if one is fitted."],
+  ["AGK", "During the magneto check there is no RPM drop when one magneto is selected. The most likely cause is:", ["A fouled spark plug", "A faulty or disconnected P-lead (the magneto is not grounded)", "Carburettor icing", "Mixture set too rich"], 1, "A healthy engine shows a small drop on each magneto. No drop suggests that the magneto being 'switched off' is not actually grounded, so it is live. This is dangerous because the propeller could fire on the ground."],
+  ["AGK", "Detonation in a piston engine is most likely to be caused by:", ["A rich mixture and low cylinder head temperature", "Fuel of a lower grade than specified and high cylinder head temperature", "Using carburettor heat", "Low manifold pressure"], 1, "Detonation is the explosive, uncontrolled burning of the charge. It is promoted by low-octane fuel, a lean mixture at high power and high CHT. It damages pistons and cylinders quickly."],
+  ["AGK", "As an aircraft climbs with a fixed mixture setting, the fuel/air mixture becomes:", ["Leaner, because air density increases", "Richer, because air density decreases", "Unchanged", "Leaner, because fuel flow decreases"], 1, "The carburettor meters fuel by volume of air, but the air gets less dense with altitude. The same fuel flow then mixes with less mass of air, so the mixture becomes richer. Lean the mixture to compensate."],
+  ["AGK", "In the northern hemisphere, a magnetic compass on a heading of east or west shows an apparent turn towards north when the aircraft:", ["Decelerates", "Accelerates", "Turns through north", "Is level and unaccelerated"], 1, "Acceleration error is greatest on east/west headings. The memory aid ANDS stands for Accelerate North, Decelerate South (northern hemisphere)."],
+  ["AGK", "The attitude indicator relies mainly on which gyroscopic property?", ["Precession", "Rigidity in space", "Apparent drift", "Gimbal lock"], 1, "The attitude indicator and the directional gyro use rigidity in space, meaning the gyro keeps a fixed orientation. The turn coordinator and turn indicator use precession."],
+  ["AGK", "In flight the ammeter shows a continuous discharge. The most likely cause is:", ["The battery is overcharged", "The alternator has failed and the battery is supplying the load", "The magnetos are failing", "The fuel pump has failed"], 1, "A discharge reading means the battery is supplying the electrical system. Shed non-essential loads, follow the checklist, and land before the battery is exhausted."],
+
+  // 030 Flight Performance & Planning
+  ["FPP", "Compared with standard conditions, a high density altitude will:", ["Shorten the take-off distance", "Lengthen the take-off distance and reduce the climb rate", "Have no effect on performance", "Increase engine power"], 1, "High density altitude (high, hot, humid) means less dense air: the engine makes less power, the propeller and wing are less efficient, and a higher TAS is needed for the same IAS. The result is a longer take-off roll and a reduced climb rate."],
+  ["FPP", "An upslope runway will:", ["Decrease the take-off distance", "Increase the take-off distance", "Not affect the take-off distance", "Decrease the landing distance and increase the take-off distance by the same amount"], 1, "A component of weight acts against acceleration on an upslope, so the take-off distance increases. On landing, an upslope helps decelerate the aircraft and shortens the landing distance."],
+  ["FPP", "An aeroplane has an empty mass of 600 kg at an arm of 2.00 m. A pilot of 80 kg sits at 2.10 m and 100 kg of fuel is loaded at 2.40 m. Where is the centre of gravity?", ["2.06 m", "2.17 m", "2.00 m", "2.12 m"], 0, "Moments: 600 × 2.00 = 1200, 80 × 2.10 = 168, 100 × 2.40 = 240. The total moment is 1608 kg·m and the total mass is 780 kg. CG = 1608 ÷ 780 ≈ 2.06 m."],
+  ["FPP", "Using a specific gravity of 0.72, what is the mass of 100 litres of AVGAS 100LL?", ["100 kg", "72 kg", "139 kg", "62 kg"], 1, "Mass = volume × density: 100 L × 0.72 kg/L = 72 kg. Always use the density given in the question or the AFM. It varies with temperature."],
+  ["FPP", "Which speed gives the greatest height gain in the shortest horizontal distance?", ["Vy", "Vx", "Vne", "Vs0"], 1, "Vx is the best angle of climb speed (most height per distance) and is used for obstacle clearance. Vy is the best rate of climb speed (most height per unit of time)."],
+  ["FPP", "Compared with a nil-wind take-off, a headwind will:", ["Increase the ground run", "Reduce the take-off ground run and distance", "Increase the required rotation speed", "Have no effect on the ground run"], 1, "Lift depends on airspeed. With a headwind the aircraft reaches its rotation IAS at a lower groundspeed, so the ground roll is shorter. Performance charts often factor headwinds down (e.g. 50%) and tailwinds up (e.g. 150%) for safety."],
+  ["FPP", "Under Part-NCO, what is the minimum final reserve fuel for a day VFR aeroplane flight that does not stay in the local area of the departure aerodrome?", ["10 minutes", "30 minutes at normal cruising altitude", "45 minutes", "60 minutes"], 1, "For aeroplanes under VFR by day, the final reserve is at least 30 minutes at normal cruising altitude (10 minutes for local flights that take off and land at the same aerodrome and remain in sight of it). By night it is 45 minutes. Always check the current rules and your operator's fuel policy."],
+  ["FPP", "Increasing aircraft mass will:", ["Decrease stall speed", "Increase the take-off and landing distances", "Increase the maximum rate of climb", "Decrease the take-off safety speed"], 1, "More mass needs more lift, which means a higher stall speed and higher take-off and approach speeds. The aircraft also accelerates more slowly and needs more energy to stop, so both distances increase."],
+
+  // 040 Human Performance
+  ["HPL", "Which gas law explains why gas trapped in the body (e.g. in the gut or middle ear) expands during a climb?", ["Charles's law", "Boyle's law", "Henry's law", "Dalton's law"], 1, "Boyle's law: at constant temperature, the volume of a gas is inversely proportional to its pressure. As ambient pressure falls in a climb, trapped gas expands. Henry's law relates to decompression sickness."],
+  ["HPL", "Hypoxic hypoxia at altitude is caused by:", ["A lower percentage of oxygen in the atmosphere", "A reduced partial pressure of oxygen", "Carbon monoxide in the cockpit", "Low blood sugar"], 1, "Oxygen stays at about 21% of the atmosphere at all altitudes, but its partial pressure falls with total pressure, so less oxygen passes into the blood. Its early signs, such as euphoria and impaired judgement, are hard to notice."],
+  ["HPL", "Carbon monoxide is especially dangerous because:", ["It has a strong smell that causes panic", "Haemoglobin binds it about 200–250 times more readily than oxygen", "It only affects pilots above 10 000 ft", "It causes immediate unconsciousness"], 1, "CO binds to haemoglobin far more strongly than oxygen, which reduces the blood's oxygen-carrying capacity (anaemic hypoxia). It is colourless and odourless. A common source is a leaking cabin heater exhaust shroud."],
+  ["HPL", "Hyperventilation leads to:", ["An increased CO2 level in the blood", "A reduced CO2 level in the blood", "An increased oxygen partial pressure in the atmosphere", "Decompression sickness"], 1, "Over-breathing washes CO2 out of the blood (hypocapnia), causing dizziness, tingling and visual disturbances. Treat it by deliberately slowing the breathing rate and depth, or by talking aloud."],
+  ["HPL", "During a rapid acceleration on take-off at night, a pilot may falsely sense:", ["A nose-down pitch attitude", "A nose-up pitch attitude", "A roll to the left", "A descent"], 1, "This is the somatogravic illusion. The otolith organs cannot tell linear acceleration from tilt, so acceleration feels like pitching up. A pilot who reacts by pushing forward may fly into the ground. Trust the instruments."],
+  ["HPL", "Which structures of the inner ear detect angular acceleration (rotation)?", ["The otoliths", "The semicircular canals", "The cochlea", "The Eustachian tube"], 1, "The three semicircular canals sense rotation in roll, pitch and yaw. The otolith organs sense linear acceleration and gravity. The cochlea is for hearing."],
+  ["HPL", "The 'blind spot' in each eye is caused by:", ["A lack of cones in the fovea", "The point where the optic nerve leaves the retina, which has no photoreceptors", "Fatigue of the rods", "Night myopia"], 1, "Where the optic nerve joins the retina there are no rods or cones. The other eye normally covers the gap, but if one eye's view is blocked by a window pillar a conflicting aircraft can be missed. Keep your head moving while scanning."],
+  ["HPL", "Night vision relies mainly on which photoreceptors, and how long does full dark adaptation take?", ["Cones, about 5 minutes", "Rods, about 30 minutes", "Cones, about 30 minutes", "Rods, about 2 minutes"], 1, "Rods work in low light but do not see colour or fine detail. Full dark adaptation takes around 30 minutes and can be lost in seconds when exposed to bright white light."],
+  ["HPL", "'Empty field myopia' occurs when:", ["Looking at a bright runway at night", "There is nothing in view to focus on, so the eyes relax to a focus of about 1–2 m", "Flying over a city", "Wearing sunglasses"], 1, "With a featureless view (haze, clear blue sky, over the sea) the eye relaxes to a short focal distance, so distant traffic is not seen. Focus on a distant object such as a wingtip or cloud edge from time to time."],
+
+  // 050 Meteorology
+  ["MET", "In the ISA, what is the temperature at 5000 ft?", ["+15 °C", "+5 °C", "−5 °C", "+10 °C"], 1, "The ISA starts at +15 °C at mean sea level and falls by about 1.98 °C (≈2 °C) per 1000 ft up to the tropopause at 36 090 ft. 15 − (5 × 1.98) ≈ +5 °C."],
+  ["MET", "In the northern hemisphere, if you stand with your back to the wind, low pressure is:", ["On your right", "On your left", "In front of you", "Behind you"], 1, "This is Buys Ballot's law. In the northern hemisphere, with your back to the wind, low pressure is on your left. Flying towards low pressure, you therefore experience drift to the right."],
+  ["MET", "Which conditions favour the formation of radiation fog?", ["Strong winds and overcast skies", "Clear skies, light winds and high humidity overnight over land", "Warm, moist air moving over a cold sea", "Rising air over mountains"], 1, "On a clear night the ground cools by radiation and chills the air above it to its dew point. Light winds (around 2–8 kt) mix the cooling through a shallow layer. Calm air gives dew, and stronger wind gives low stratus instead."],
+  ["MET", "Advection fog forms when:", ["The ground cools at night under a clear sky", "Warm, moist air moves over a colder surface", "Cold air passes over warm water", "Air is forced up a slope"], 1, "Advection fog forms when warm, moist air is cooled to saturation from below by a colder surface, typically over the sea or a coast. Unlike radiation fog it can persist in stronger winds and by day."],
+  ["MET", "What does 'CAVOK' in a METAR mean?", ["Ceiling and visibility unlimited", "Visibility 10 km or more, no cloud below 5000 ft (or below the highest MSA if greater), no CB/TCU and no significant weather", "Visibility 5 km or more and no low cloud", "Clear skies with no wind"], 1, "CAVOK replaces visibility, RVR, weather and cloud groups when all of these conditions are met: visibility at least 10 km, no cloud of operational significance, no CB or TCU, and no significant weather."],
+  ["MET", "In the northern hemisphere, as a cold front passes, the surface wind typically:", ["Backs", "Veers", "Becomes calm", "Remains unchanged"], 1, "Wind veers (shifts clockwise) at the passage of both warm and cold fronts in the northern hemisphere. A cold front also brings a temperature drop, rising pressure and often showers or thunderstorms."],
+  ["MET", "Clear ice is most likely to form:", ["In stratiform cloud at −30 °C", "In cumuliform cloud with large supercooled water droplets between 0 °C and about −15 °C", "In clear air below 0 °C", "In fog at +5 °C"], 1, "Large supercooled droplets freeze slowly and spread back over the surface before freezing, forming heavy, clear ice that is hard to remove. Small droplets freeze on impact and form rime ice."],
+  ["MET", "The dew point is:", ["The temperature at which dew evaporates", "The temperature to which air must be cooled at constant pressure to become saturated", "The difference between temperature and humidity", "The freezing level"], 1, "When the temperature and the dew point are close (a small spread), the air is nearly saturated and fog or low cloud is likely, especially as the temperature falls in the evening."],
+  ["MET", "Which stage of a thunderstorm has both strong updraughts and downdraughts and the start of precipitation at the surface?", ["Cumulus stage", "Mature stage", "Dissipating stage", "Initial stage"], 1, "The cumulus stage has mainly updraughts. The mature stage has updraughts and downdraughts, precipitation, gust fronts, hail, lightning and the worst turbulence. The dissipating stage is dominated by downdraughts."],
+  ["MET", "The Föhn effect produces, on the lee side of a mountain range:", ["Cold, moist air", "Warm, dry air", "Freezing fog", "Thunderstorms"], 1, "Moist air rising on the windward side cools at the saturated lapse rate and loses moisture as precipitation. Descending on the lee side it warms at the faster dry rate, so it arrives warmer and drier."],
+  ["MET", "In a METAR, the wind direction is given relative to:", ["Magnetic north", "True north", "Grid north", "The runway heading"], 1, "METARs and TAFs give wind in degrees true. Wind passed by ATC/ATIS for take-off and landing is given in degrees magnetic, so it can be compared directly with runway headings."],
+
+  // 060 Navigation
+  ["NAV", "After flying 30 NM you are 2 NM left of track. Using the 1-in-60 rule, what is the track error?", ["2°", "4°", "6°", "8°"], 1, "Track error = (distance off ÷ distance flown) × 60 = (2 ÷ 30) × 60 = 4°. To regain track at the destination you add the closing angle as well."],
+  ["NAV", "The true track is 090° and the variation is 5° W. What is the magnetic track?", ["085°", "095°", "090°", "100°"], 1, "Memory aid: 'Variation west, magnetic best; variation east, magnetic least.' With west variation you add: 090 + 5 = 095°M."],
+  ["NAV", "One nautical mile equals:", ["1609 m", "1852 m", "1000 m", "6080 m"], 1, "1 NM = 1852 m (about 6076 ft), equal to one minute of latitude. A statute mile is 1609 m."],
+  ["NAV", "A leg of 90 NM is flown at a groundspeed of 120 kt. How long does it take?", ["40 minutes", "45 minutes", "50 minutes", "1 hour 15 minutes"], 1, "Time = distance ÷ speed = 90 ÷ 120 = 0.75 h = 45 min. Quick check: 120 kt is 2 NM per minute, and 90 ÷ 2 = 45 minutes."],
+  ["NAV", "On a chart with a scale of 1:500 000, 1 cm represents:", ["500 m", "5 km", "50 km", "0.5 NM"], 1, "1 cm × 500 000 = 500 000 cm = 5 km (about 2.7 NM). The 1:500 000 ICAO chart is the standard VFR navigation chart in many EASA states."],
+  ["NAV", "A rhumb line is a line that:", ["Is the shortest distance between two points on the Earth", "Crosses all meridians at the same angle", "Always follows a parallel of latitude", "Passes through both poles"], 1, "A rhumb line keeps a constant track angle. A great circle is the shortest route but crosses each meridian at a different angle (except along the equator or a meridian)."],
+  ["NAV", "A VOR radial is:", ["A true bearing to the station", "A magnetic bearing from the station", "A magnetic bearing to the station", "A relative bearing from the aircraft's nose"], 1, "Radials are magnetic bearings outbound from the station. An aircraft on the 090 radial is east of the VOR. To fly inbound you would track 270°."],
+  ["NAV", "What time difference corresponds to 15° of longitude?", ["30 minutes", "1 hour", "4 minutes", "15 minutes"], 1, "The Earth turns 360° in 24 h, which is 15° per hour (1° = 4 minutes). This is the basis of converting longitude difference to time (arc to time)."],
+  ["NAV", "Heading 360°(T), TAS 100 kt, wind 270°(T)/20 kt. What is the approximate track?", ["349°", "011°", "360°", "020°"], 1, "A westerly wind blows the aircraft east, causing right drift. The drift angle is about tan⁻¹(20/100) ≈ 11°, so the track is about 011°T and the groundspeed is about 102 kt."],
+  ["NAV", "On a Lambert conformal conic chart, a straight line approximates:", ["A rhumb line", "A great circle", "A parallel of latitude", "An isogonal"], 1, "On a Lambert chart a straight line is very close to a great circle, and angles and shapes are preserved (conformal). This makes it well suited to measuring tracks over typical VFR distances."],
+
+  // 070 Operational Procedures
+  ["OPS", "When landing behind a large aircraft, to avoid its wake turbulence you should:", ["Stay below its flight path and land before its touchdown point", "Stay at or above its flight path and land beyond its touchdown point", "Approach faster than normal", "Land exactly on its touchdown point"], 1, "Wake vortices sink and drift with the wind and stop being generated once the nose wheel is down. Staying above the preceding aircraft's path and landing past its touchdown point keeps you clear. Allow the recommended time separation."],
+  ["OPS", "Which extinguishing agent must not be used on an electrical fire?", ["CO2", "Dry powder", "Water", "Halon (or approved replacement)"], 2, "Water conducts electricity and can spread a fire involving fuel or oil. Use a CO2, dry powder or halon-type extinguisher, isolate the electrical supply, and ventilate the cabin after use."],
+  ["OPS", "When ditching, life jackets should be inflated:", ["Before the aircraft touches the water", "After leaving the aircraft", "At 1000 ft", "Only when the cabin is full of water"], 1, "An inflated life jacket inside the cabin can trap you against the roof as water enters and stop you escaping. Put it on before ditching, but inflate it only once you are outside the aircraft."],
+  ["OPS", "On final approach you fly into a sudden increase in headwind (wind shear). Initially the aircraft will:", ["Lose airspeed and sink below the glide path", "Gain airspeed and rise above the glide path", "Yaw towards the wind", "Show no change"], 1, "The aircraft's inertia keeps its groundspeed for a moment, so a sudden headwind increase raises the IAS and lift, and the aircraft balloons above the path. If the headwind then dies away, the reverse happens, so be ready for a go-around."],
+  ["OPS", "Using the formula 9 × √(tyre pressure in psi), what is the approximate dynamic aquaplaning speed for a tyre inflated to 25 psi?", ["25 kt", "45 kt", "60 kt", "81 kt"], 1, "9 × √25 = 9 × 5 = 45 kt. Above this speed on a flooded runway the tyre can ride on a film of water, losing braking and directional control. For a non-rotating tyre, the factor drops to about 7.7."],
+  ["OPS", "Before an approach to land on a runway with standing water, the pilot should expect:", ["A shorter landing distance", "A longer landing distance due to reduced braking action", "Better directional control", "No change in performance"], 1, "Contaminated runways reduce braking effectiveness and increase the risk of aquaplaning. Use the AFM correction factors and aim for a firm, on-speed touchdown."],
+  ["OPS", "If an engine fire occurs in flight, the first priority is normally to:", ["Open the cabin heat", "Shut off the fuel supply to the engine", "Increase airspeed to blow out the fire with the engine running", "Turn on the master switch"], 1, "Typical checklists start with fuel selector OFF, throttle closed, mixture idle cut-off, magnetos and master OFF, and cabin heat OFF. Then carry out a forced landing. Always follow the specific AFM/POH checklist."],
+
+  // 080 Principles of Flight
+  ["POF", "At a constant angle of attack and air density, doubling the true airspeed changes the lift by a factor of:", ["2", "4", "√2", "½"], 1, "L = ½ ρ V² S CL. Lift is proportional to the square of the speed, so doubling V gives 2² = 4 times the lift."],
+  ["POF", "An aeroplane stalls when:", ["The airspeed falls below the published stall speed", "The critical angle of attack is exceeded", "The nose is raised above the horizon", "The engine power is reduced to idle"], 1, "A wing stalls at its critical angle of attack (typically around 15–16° for a light aircraft wing), at any airspeed, attitude or power setting. The published stall speed applies only to the stated weight and load factor."],
+  ["POF", "An aeroplane stalls at 50 kt IAS in level flight. What is its stall speed in a level 60° banked turn?", ["50 kt", "60 kt", "71 kt", "100 kt"], 2, "In a 60° level turn, load factor n = 1/cos 60° = 2. Stall speed rises by √n = √2 ≈ 1.41, so 50 × 1.41 ≈ 71 kt."],
+  ["POF", "Lowering the flaps will:", ["Decrease CLmax and increase stall speed", "Increase CLmax, reduce stall speed and increase drag", "Reduce drag", "Have no effect on stall speed"], 1, "Flaps increase camber (and on some types wing area), raising the maximum lift coefficient. The aircraft can fly slower and approach more steeply, at the cost of more drag."],
+  ["POF", "As speed increases in level flight, induced drag:", ["Increases", "Decreases", "Stays constant", "First decreases then increases"], 1, "Induced drag comes from producing lift. At low speed a high angle of attack is needed, which creates strong tip vortices. As speed increases the angle of attack falls and induced drag decreases, while parasite drag rises. Total drag is lowest at Vmd."],
+  ["POF", "Adverse aileron yaw is caused by:", ["The down-going aileron on the rising wing producing more induced drag", "The propeller slipstream", "Excessive rudder input", "The fin stalling"], 0, "The wing with the lowered aileron produces more lift and more induced drag, so the nose yaws away from the intended turn. Coordinate with rudder, or use designs such as Frise or differential ailerons."],
+  ["POF", "Moving the centre of gravity aft will:", ["Increase longitudinal stability", "Reduce longitudinal stability and lighten control forces", "Increase the stall speed", "Have no effect on handling"], 1, "With an aft CG the moment arm to the tailplane is shorter, so stability is reduced, elevator forces are lighter and spin recovery may be harder. A forward CG increases stability and stall speed."],
+  ["POF", "Wingtip vortices are strongest when the generating aircraft is:", ["Light, fast and clean", "Heavy, slow and clean", "Heavy, fast and with flaps down", "Light, slow and with flaps down"], 1, "Vortex strength is driven by the lift needed (weight) and the angle of attack. Heavy, slow and clean means a high angle of attack and strong vortices. This typically applies right after take-off and before landing."],
+  ["POF", "Ground effect, when flying within about one wingspan of the surface, results in:", ["Increased induced drag", "Reduced induced drag and a tendency to float", "Higher stall speed", "Loss of elevator authority only"], 1, "The ground limits the downwash and tip vortices, which reduces induced drag. The aircraft tends to float in the flare, and on take-off it may lift off before it can climb out of ground effect."],
+
+  // 090 Communications
+  ["COM", "What is the spoken urgency signal?", ["MAYDAY MAYDAY MAYDAY", "PAN PAN, PAN PAN, PAN PAN", "SECURITÉ ×3", "EMERGENCY ×3"], 1, "PAN PAN (spoken three times) signals urgency: a condition concerning the safety of an aircraft or person on board that does not need immediate assistance. MAYDAY signals distress: grave and imminent danger."],
+  ["COM", "Which of the following must always be read back?", ["Surface wind", "Traffic information", "QNH", "Weather at the destination"], 2, "Mandatory read-back items include runway-in-use instructions, altimeter settings, SSR codes, level, heading and speed instructions, frequency changes and ATC route clearances."],
+  ["COM", "The word 'WILCO' means:", ["I will call you back", "I understand your message and will comply with it", "Wait, I will call you", "Say again"], 1, "WILCO (from 'will comply') confirms both understanding and compliance. 'ROGER' means only that the last transmission was received. Neither replaces a required read-back."],
+  ["COM", "The international aeronautical emergency frequency is:", ["118.0 MHz", "121.5 MHz", "123.45 MHz", "122.8 MHz"], 1, "121.5 MHz is monitored by ATC units, many aircraft and satellites (for ELTs). If you are in distress, first use the frequency you are already on, and change to 121.5 if you get no answer."],
+  ["COM", "On the readability scale, '5' means:", ["Unreadable", "Readable now and then", "Readable but with difficulty", "Perfectly readable"], 3, "Readability scale: 1 unreadable, 2 readable now and then, 3 readable but with difficulty, 4 readable, 5 perfectly readable."],
+  ["COM", "A distress message should first be transmitted on:", ["121.5 MHz", "The frequency currently in use", "The FIS frequency", "The destination tower frequency"], 1, "Stay on the frequency in use, where the controller already knows you. Change to 121.5 MHz only if there is no contact. Set 7700 on the transponder as well, unless instructed otherwise."],
+  ["COM", "The instruction 'Squawk ident' means:", ["Select code 7000", "Operate the transponder's IDENT (SPI) function", "Switch the transponder to standby", "Tell ATC your callsign"], 1, "Pressing IDENT briefly makes your return highlighted on the controller's radar display, so they can identify you."],
+  ["COM", "The word 'ROGER' means:", ["Yes", "I have received all of your last transmission", "I will comply", "Permission granted"], 1, "ROGER only confirms receipt. It should never be used to answer a question that needs a yes or no ('AFFIRM' or 'NEGATIVE') or in place of a required read-back."]
+];
+const QB = RAW.map((r, i) => ({ id: r[0] + "-" + String(i + 1).padStart(3, "0"), s: r[0], q: r[1], o: r[2], a: r[3], e: r[4] }));
+const SUBJ = Object.fromEntries(SUBJECTS.map(s => [s.id, s]));
+const PASS = 75;
+const SEC_PER_Q = 75; // exam mode time allowance
+</script>
+
+<script>
+/* ---------------- Utilities ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+const uid = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pad = n => String(n).padStart(2, "0");
+function fmtDate(ts) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  let local;
+  try { local = new Intl.DateTimeFormat(undefined, { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(d); }
+  catch { local = d.toLocaleString(); }
+  return `${local} · ${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z`;
+}
+function fmtDur(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+async function hashPw(pw, salt) {
+  try {
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveBits"]);
+    const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: enc.encode(salt), iterations: 120000, hash: "SHA-256" }, key, 256);
+    return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    let h = 2166136261; const s = salt + ":" + pw;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return "f" + (h >>> 0).toString(16);
+  }
+}
+
+/* ---------------- Storage: Claude account (cloud) or this-device accounts (local) ---------------- */
+function CloudStore(db, userId) {
+  const col = db.collection("data/users/" + userId);
+  let unsub = null;
+  return {
+    kind: "cloud",
+    subscribe(onData, onError) {
+      unsub = col.onSnapshot(snap => onData(snap.docs.map(d => d.data()).filter(t => t && t.id), snap.metadata.fromCache), e => onError(e));
+    },
+    stop() { unsub && unsub(); unsub = null; },
+    put(t) { return col.doc(t.id).set(clone(t)); },
+    remove(id) { return col.doc(id).delete(); }
+  };
+}
+function LocalStore(email) {
+  const key = "clearway.tests." + email;
+  let cb = null;
+  const read = () => LS.get(key, []);
+  const emit = () => cb && cb(read(), false);
+  return {
+    kind: "local",
+    subscribe(onData) { cb = onData; emit(); },
+    stop() { cb = null; },
+    async put(t) { const all = read().filter(x => x.id !== t.id); all.push(clone(t)); if (!LS.set(key, all)) throw { code: "storage" }; emit(); },
+    async remove(id) { LS.set(key, read().filter(x => x.id !== id)); emit(); }
+  };
+}
+
+/* ---------------- State ---------------- */
+const S = {
+  booting: true,
+  cloud: null,          // {db, userId, name} when a Claude account is available
+  user: null,           // {name, email|null, kind}
+  store: null,
+  tests: [], loaded: false, stale: false,
+  view: "login", authTab: "signin", authErr: "", busy: false,
+  setup: { subjects: SUBJECTS.map(s => s.id), count: 20, mode: "practice" },
+  active: null, showGrid: false, lastSaved: null,
+  reviewId: null, reviewFilter: "all", resultId: null,
+  confirmDel: null, modal: null
+};
+
+/* ---------------- Boot ---------------- */
+async function initCloud() {
+  if (!window.claude || typeof window.claude.use !== "function") return null;
+  try {
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    if (!db || !user) return null;
+    const id = await user.id();
+    if (!id) return null;
+    const canWrite = await user.can("data.write");
+    if (canWrite === false) return null;
+    const me = await user.me();
+    return { db, userId: id, name: (me && me.name) || "Pilot" };
+  } catch { return null; }
+}
+async function boot() {
+  render();
+  S.cloud = await initCloud();
+  S.booting = false;
+  const sess = LS.get("clearway.session", null);
+  if (sess && sess.kind === "local") {
+    const acc = LS.get("clearway.accounts", {})[sess.email];
+    if (acc) { startSession({ name: acc.name, email: acc.email, kind: "local" }); return; }
+  }
+  if (sess && sess.kind === "cloud" && S.cloud) { startSession({ name: S.cloud.name, email: null, kind: "cloud" }); return; }
+  S.view = "login"; render();
+}
+function startSession(user) {
+  S.user = user;
+  S.store = user.kind === "cloud" ? CloudStore(S.cloud.db, S.cloud.userId) : LocalStore(user.email);
+  LS.set("clearway.session", { kind: user.kind, email: user.email });
+  S.loaded = false; S.stale = false; S.tests = [];
+  const t = setTimeout(() => { if (!S.loaded) { S.stale = true; render(); } }, 10000);
+  S.store.subscribe((tests, fromCache) => {
+    S.tests = tests; S.loaded = true;
+    if (!fromCache) { S.stale = false; clearTimeout(t); }
+    if (S.view !== "run") render();
+  }, () => { clearTimeout(t); S.loaded = true; S.stale = true; if (S.view !== "run") render(); });
+  S.view = "home"; render();
+}
+function signOut() {
+  stopTimer();
+  S.store && S.store.stop();
+  LS.del("clearway.session");
+  Object.assign(S, { user: null, store: null, tests: [], view: "login", active: null, authErr: "" });
+  render();
+}
+
+/* ---------------- Derived data ---------------- */
+const savedTests = () => S.tests.filter(t => t.status === "in_progress").sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+const doneTests = () => S.tests.filter(t => t.status === "completed").sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+function testTitle(t) {
+  if (t.title) return t.title;
+  if (t.subjects.length === SUBJECTS.length) return "All subjects";
+  if (t.subjects.length === 1) return `${SUBJ[t.subjects[0]].code} ${SUBJ[t.subjects[0]].name}`;
+  return t.subjects.map(s => SUBJ[s].code).join(" · ");
+}
+const answeredCount = t => t.ans.filter(a => a !== null).length;
+function scoreOf(t) {
+  let c = 0; t.items.forEach((it, i) => { if (t.ans[i] === it.a) c++; });
+  return { correct: c, total: t.items.length, pct: t.items.length ? Math.round((c / t.items.length) * 100) : 0 };
+}
+function subjectStats() {
+  const m = {}; SUBJECTS.forEach(s => m[s.id] = { c: 0, n: 0 });
+  doneTests().forEach(t => t.items.forEach((it, i) => { if (m[it.s]) { m[it.s].n++; if (t.ans[i] === it.a) m[it.s].c++; } }));
+  return m;
+}
+
+/* ---------------- Test lifecycle ---------------- */
+function createTest({ subjects, count, mode, fromItems, title }) {
+  const src = fromItems || shuffle(QB.filter(q => subjects.includes(q.s))).slice(0, count);
+  const items = src.map(q => ({ id: q.id, s: q.s, q: q.q, o: q.o, a: q.a, e: q.e, order: shuffle([0, 1, 2, 3]) }));
+  const now = Date.now();
+  return {
+    id: uid(), status: "in_progress", mode, title: title || null,
+    subjects: subjects || [...new Set(items.map(i => i.s))],
+    createdAt: now, savedAt: null, completedAt: null,
+    timeLimit: mode === "exam" ? items.length * SEC_PER_Q : null,
+    timeLeft: mode === "exam" ? items.length * SEC_PER_Q : null,
+    elapsed: 0, current: 0, items,
+    ans: items.map(() => null), flags: items.map(() => false)
+  };
+}
+let timer = null;
+function startTimer() {
+  stopTimer();
+  timer = setInterval(() => {
+    const t = S.active; if (!t || S.view !== "run") return;
+    t.elapsed++;
+    if (t.mode === "exam") {
+      t.timeLeft = Math.max(0, t.timeLeft - 1);
+      if (t.timeLeft === 0) { finishTest(true); return; }
+    }
+    const el = $("#timer");
+    if (el) {
+      el.textContent = t.mode === "exam" ? fmtDur(t.timeLeft) : fmtDur(t.elapsed);
+      el.classList.toggle("low", t.mode === "exam" && t.timeLeft <= 60);
+    }
+  }, 1000);
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+function openTest(t) {
+  S.active = clone(t); S.showGrid = false; S.lastSaved = JSON.stringify(t.ans) + JSON.stringify(t.flags);
+  S.view = "run"; render(); startTimer(); window.scrollTo(0, 0);
+}
+async function saveActive() {
+  const t = S.active; if (!t) return;
+  t.savedAt = Date.now();
+  try {
+    await S.store.put(t);
+    stopTimer(); S.active = null; S.view = "saved"; render();
+    toast("Test saved. Resume it any time from Saved tests.");
+  } catch (e) { toast(saveErr(e)); }
+}
+function saveErr(e) {
+  if (e && e.code === "quota_exceeded") return "Storage is full. Delete some old tests and try again.";
+  if (e && e.code === "storage") return "This browser blocked storage. Turn off private mode and try again.";
+  return "Couldn't save just now. Check your connection and try again.";
+}
+async function finishTest(timeUp) {
+  const t = S.active; if (!t) return;
+  stopTimer();
+  t.status = "completed"; t.completedAt = Date.now(); t.score = scoreOf(t);
+  try { await S.store.put(t); } catch (e) { toast(saveErr(e)); }
+  S.active = null; S.resultId = t.id; S.view = "result"; S.modal = null;
+  if (!S.tests.find(x => x.id === t.id)) S.tests.push(clone(t));
+  else S.tests = S.tests.map(x => x.id === t.id ? clone(t) : x);
+  render(); window.scrollTo(0, 0);
+  if (timeUp) toast("Time is up. Your test has been marked.");
+}
+function exitRun() {
+  const t = S.active;
+  const changed = JSON.stringify(t.ans) + JSON.stringify(t.flags) !== S.lastSaved;
+  const wasSaved = !!t.savedAt;
+  if (!changed && wasSaved) { stopTimer(); S.active = null; S.view = "saved"; render(); return; }
+  if (!changed && answeredCount(t) === 0) { stopTimer(); S.active = null; S.view = "home"; render(); return; }
+  S.modal = {
+    title: "Save this test before leaving?",
+    body: wasSaved ? "You have answers since your last save. Save them so you can pick up where you left off." : "Saving keeps your answers and remaining time. You'll find it under Saved tests.",
+    actions: [
+      { label: "Keep going", act: "modal-close" },
+      { label: wasSaved ? "Leave without saving" : "Discard test", act: "discard", cls: "danger" },
+      { label: "Save & exit", act: "save", cls: "primary" }
+    ]
+  };
+  render();
+}
+
+/* ---------------- Rendering ---------------- */
+function render() {
+  const app = $("#app");
+  if (S.booting) { app.innerHTML = `<div class="loading">Checking your sign-in…</div>`; return; }
+  if (!S.user || S.view === "login") { app.innerHTML = viewLogin(); renderLayer(); return; }
+  let body = "";
+  if (S.view === "home") body = viewHome();
+  else if (S.view === "saved") body = viewSaved();
+  else if (S.view === "completed") body = viewCompleted();
+  else if (S.view === "run") body = viewRun();
+  else if (S.view === "result") body = viewResult();
+  else if (S.view === "review") body = viewReview();
+  app.innerHTML = header() + `<main class="wrap">${body}</main>`;
+  renderLayer();
+}
+const LOGO = `<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="7" fill="var(--accent)"/><path d="M16 5v22M11 9h10M11 23h10" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"/><path d="M16 13l-7 4v2l7-2 7 2v-2z" fill="var(--accent-ink)"/></svg>`;
+function header() {
+  const nav = S.view !== "run";
+  const ini = (S.user.name || "?").split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const tab = (v, label, n) => `<button class="tab" data-act="nav" data-v="${v}" ${S.view === v || (v === "completed" && ["review", "result"].includes(S.view)) ? 'aria-current="page"' : ""}>${label}${n != null ? `<span class="count">${n}</span>` : ""}</button>`;
+  return `<header class="top"><div class="top-inner">
+    <div class="brand">${LOGO}<div class="brand-name">Clear<span>way</span> PPL</div></div>
+    <div class="acct"><span class="avatar">${esc(ini)}</span><span class="who">${esc(S.user.name)}</span>
+      ${nav ? `<button class="btn ghost sm" data-act="signout">Sign out</button>` : ""}</div>
+    ${nav ? `<nav class="tabs" aria-label="Sections">${tab("home", "New test")}${tab("saved", "Saved tests", savedTests().length)}${tab("completed", "Completed tests", doneTests().length)}</nav>` : ""}
+  </div></header>`;
+}
+
+function viewLogin() {
+  const t = S.authTab;
+  const cloud = S.cloud ? `
+    <div class="cloud-id"><span class="avatar">${esc(S.cloud.name.slice(0, 1).toUpperCase())}</span>
+      <div style="flex:1;min-width:0"><b>${esc(S.cloud.name)}</b><div class="note">Your tests are saved privately to your Claude account and sync across devices.</div></div></div>
+    <button class="btn primary" data-act="cloud-login">Continue as ${esc(S.cloud.name.split(" ")[0])}</button>
+    <div class="divider">or use an email account</div>` : "";
+  return `<div class="login"><div class="login-box">
+    <div class="login-hero">${LOGO.replace('class="brand-mark"', 'class="brand-mark" style="width:44px;height:44px"')}
+      <span class="eyebrow">EASA PPL(A) · 9 subjects · pass mark 75%</span>
+      <h1>Train for your PPL theory exams</h1>
+      <p class="muted">Practise by subject, sit timed mock exams, save unfinished tests and review every result.</p></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:14px">
+      ${cloud}
+      <div class="seg" role="group" aria-label="Account"><button data-act="authtab" data-v="signin" aria-pressed="${t === "signin"}">Sign in</button><button data-act="authtab" data-v="signup" aria-pressed="${t === "signup"}">Create account</button></div>
+      <form id="authform" style="display:flex;flex-direction:column;gap:12px" novalidate>
+        ${t === "signup" ? `<div class="field"><label for="f-name">Full name</label><input id="f-name" name="name" autocomplete="name" required placeholder="e.g. Sara Khan"></div>` : ""}
+        <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com"></div>
+        <div class="field"><label for="f-pw">Password</label><input id="f-pw" name="pw" type="password" autocomplete="${t === "signup" ? "new-password" : "current-password"}" required minlength="6" placeholder="${t === "signup" ? "At least 6 characters" : ""}"></div>
+        ${S.authErr ? `<p class="err" role="alert">${esc(S.authErr)}</p>` : ""}
+        <button class="btn ${S.cloud ? "" : "primary"}" type="submit" ${S.busy ? "disabled" : ""}>${t === "signup" ? "Create account" : "Sign in"}</button>
+      </form>
+      <p class="note">Email accounts in this preview are stored in this browser only. The production version will use a hosted sign-in.</p>
+    </div>
+  </div></div>`;
+}
+
+function viewHome() {
+  const st = S.setup;
+  const avail = QB.filter(q => st.subjects.includes(q.s)).length;
+  const count = Math.min(st.count, avail);
+  const stats = subjectStats();
+  const sv = savedTests();
+  const all = st.subjects.length === SUBJECTS.length;
+  const resume = sv[0] ? `<div class="item">
+      <div class="item-main"><span class="eyebrow">Continue where you left off</span><span class="item-title">${esc(testTitle(sv[0]))}</span>
+        <div class="meta"><span>${answeredCount(sv[0])}/${sv[0].items.length} answered</span><span class="mono">Saved ${esc(fmtDate(sv[0].savedAt))}</span></div></div>
+      <div class="item-side"><button class="btn primary sm" data-act="resume" data-id="${sv[0].id}">Resume</button></div></div>` : "";
+  return `
+  <div class="section-head"><h1>New test</h1><p class="muted">Pick subjects, choose how many questions, and choose practice or exam mode.</p></div>
+  ${S.stale ? `<p class="note">Your saved data can't be reached yet. Tests you start now will still save once the connection returns.</p>` : ""}
+  ${resume}
+  <section class="card" style="display:flex;flex-direction:column;gap:18px">
+    <div class="row"><h3>Subjects</h3><span class="spacer"></span><button class="btn ghost sm" data-act="all-subj">${all ? "Clear all" : "Select all"}</button></div>
+    <div class="subj-grid">${SUBJECTS.map(s => `<button class="subj" data-act="subj" data-v="${s.id}" aria-pressed="${st.subjects.includes(s.id)}"><span class="code">${s.code}</span><span class="nm">${esc(s.name)}</span><span class="n">${QB.filter(q => q.s === s.id).length}</span></button>`).join("")}</div>
+    <div class="opts">
+      <div class="field"><label for="f-count">Number of questions</label>
+        <select id="f-count" data-act="count">${[5, 10, 20, 30, 50].map(n => `<option value="${n}" ${st.count === n ? "selected" : ""}>${n}</option>`).join("")}<option value="999" ${st.count === 999 ? "selected" : ""}>All available (${avail})</option></select></div>
+      <div class="field"><label>Mode</label><div class="mode-pick">
+        <button class="mode" data-act="mode" data-v="practice" aria-pressed="${st.mode === "practice"}"><b>Practice</b><span>Answer and explanation after each question</span></button>
+        <button class="mode" data-act="mode" data-v="exam" aria-pressed="${st.mode === "exam"}"><b>Exam</b><span>Timed, marked at the end</span></button></div></div>
+    </div>
+    <div class="row"><span class="muted">${count} question${count === 1 ? "" : "s"}${st.mode === "exam" ? ` · ${fmtDur(count * SEC_PER_Q)} time limit` : ""}</span><span class="spacer"></span>
+      <button class="btn primary" data-act="start" ${count ? "" : "disabled"}>Start test</button></div>
+  </section>
+  <section class="card" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row"><h3>Your progress by subject</h3><span class="spacer"></span><span class="note">Line marks the 75% pass mark</span></div>
+    <div class="prog">${SUBJECTS.map(s => {
+      const m = stats[s.id]; const p = m.n ? Math.round(m.c / m.n * 100) : 0;
+      return `<div class="prog-row"><span class="mono" style="color:var(--accent)">${s.code}</span>
+        <div class="prog-name"><span>${esc(s.name)}</span><div class="bar"><i class="${m.n ? (p >= PASS ? "pass" : "fail") : ""}" style="width:${p}%"></i></div></div>
+        <span class="mono" style="text-align:right">${m.n ? p + "%" : "—"}<br><span class="note">${m.n ? m.c + "/" + m.n : "no data"}</span></span></div>`;
+    }).join("")}</div>
+  </section>`;
+}
+
+const EMPTY_ICON = `<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="10" y="8" width="36" height="42" rx="4"/><path d="M18 20h20M18 28h20M18 36h12"/></svg>`;
+function viewSaved() {
+  const list = savedTests();
+  return `<div class="section-head"><h1>Saved tests</h1><p class="muted">Unfinished tests you saved. Your answers and remaining time are kept.</p></div>
+  ${!S.loaded ? `<p class="muted">Loading your saved tests…</p>` : list.length === 0 ? `<div class="card empty">${EMPTY_ICON}<b style="color:var(--ink)">No saved tests</b><p>Start a test and tap <b>Save &amp; exit</b> at any point to finish it later.</p><button class="btn primary" data-act="nav" data-v="home">Start a test</button></div>` :
+  `<div class="list">${list.map(t => {
+    const a = answeredCount(t), n = t.items.length;
+    return `<div class="item"><div class="item-main">
+      <div class="row" style="gap:8px"><span class="item-title">${esc(testTitle(t))}</span><span class="pill mode-${t.mode}">${t.mode}</span></div>
+      <div class="meta"><span class="mono">Saved ${esc(fmtDate(t.savedAt))}</span><span>${a}/${n} answered</span>${t.mode === "exam" ? `<span>${fmtDur(t.timeLeft)} left</span>` : `<span>${fmtDur(t.elapsed)} spent</span>`}</div>
+      <div class="mini-bar"><i style="width:${Math.round(a / n * 100)}%"></i></div></div>
+      <div class="item-side">${S.confirmDel === t.id ? `<span class="confirm-inline">Delete this test?<button class="btn sm danger" data-act="del-yes" data-id="${t.id}">Delete</button><button class="btn sm" data-act="del-no">Cancel</button></span>` :
+      `<button class="btn ghost sm danger" data-act="del" data-id="${t.id}">Delete</button><button class="btn primary sm" data-act="resume" data-id="${t.id}">Resume</button>`}</div></div>`;
+  }).join("")}</div>`}`;
+}
+
+function viewCompleted() {
+  const list = doneTests();
+  const passed = list.filter(t => t.score && t.score.pct >= PASS).length;
+  const avg = list.length ? Math.round(list.reduce((s, t) => s + (t.score ? t.score.pct : 0), 0) / list.length) : 0;
+  return `<div class="section-head"><h1>Completed tests</h1><p class="muted">Every finished test with its date, time and score. Open one to review your answers.</p></div>
+  ${list.length ? `<div class="card stats"><div class="stat"><span class="eyebrow">Tests</span><b>${list.length}</b></div><div class="stat"><span class="eyebrow">Average</span><b>${avg}%</b></div><div class="stat"><span class="eyebrow">Passed (≥${PASS}%)</span><b>${passed}</b></div></div>` : ""}
+  ${!S.loaded ? `<p class="muted">Loading your results…</p>` : list.length === 0 ? `<div class="card empty">${EMPTY_ICON}<b style="color:var(--ink)">No completed tests yet</b><p>Finish a test to see your score here.</p><button class="btn primary" data-act="nav" data-v="home">Start a test</button></div>` :
+  `<div class="list">${list.map(t => {
+    const sc = t.score || scoreOf(t), pass = sc.pct >= PASS;
+    return `<div class="item"><div class="item-main">
+      <div class="row" style="gap:8px"><span class="item-title">${esc(testTitle(t))}</span><span class="pill mode-${t.mode}">${t.mode}</span></div>
+      <div class="meta"><span class="mono">${esc(fmtDate(t.completedAt))}</span><span>${sc.correct}/${sc.total} correct</span><span>Time ${fmtDur(t.elapsed)}</span></div></div>
+      <div class="item-side"><span class="score" style="color:var(${pass ? "--ok" : "--bad"})">${sc.pct}%</span><span class="pill ${pass ? "pass" : "fail"}">${pass ? "Pass" : "Fail"}</span>
+      ${S.confirmDel === t.id ? `<span class="confirm-inline"><button class="btn sm danger" data-act="del-yes" data-id="${t.id}">Delete</button><button class="btn sm" data-act="del-no">Cancel</button></span>` :
+      `<button class="btn ghost sm danger" data-act="del" data-id="${t.id}" aria-label="Delete result">Delete</button><button class="btn primary sm" data-act="review" data-id="${t.id}">Review</button>`}</div></div>`;
+  }).join("")}</div>`}`;
+}
+
+function optionHTML(it, k, idx, state, clickable) {
+  const L = "ABCD"[k];
+  let cls = "", mark = "";
+  if (state.reveal) {
+    if (idx === it.a) { cls = "correct"; mark = "Correct"; }
+    else if (idx === state.chosen) { cls = "wrong"; mark = "Your answer"; }
+  }
+  const pressed = !state.reveal && idx === state.chosen;
+  return `<button class="opt ${cls}" ${clickable ? `data-act="pick" data-v="${idx}"` : "disabled"} aria-pressed="${pressed}"><span class="ltr">${L}</span><span>${esc(it.o[idx])}</span><span class="mark">${mark}</span></button>`;
+}
+function viewRun() {
+  const t = S.active, i = t.current, it = t.items[i], n = t.items.length;
+  const chosen = t.ans[i];
+  const reveal = t.mode === "practice" && chosen !== null;
+  const done = answeredCount(t);
+  const s = SUBJ[it.s];
+  const grid = S.showGrid ? `<section class="card" style="display:flex;flex-direction:column;gap:10px">
+      <div class="qgrid">${t.items.map((q, k) => {
+        let c = "";
+        if (t.ans[k] !== null) c = t.mode === "practice" ? (t.ans[k] === q.a ? "ok" : "no") : "ans";
+        return `<button class="qdot ${c} ${k === i ? "cur" : ""} ${t.flags[k] ? "flag" : ""}" data-act="goto" data-v="${k}" aria-label="Question ${k + 1}">${k + 1}</button>`;
+      }).join("")}</div>
+      <div class="legend"><span class="l-ans">Answered</span><span class="l-flag">Flagged</span></div></section>` : "";
+  return `
+  <div class="run-head">
+    <button class="btn sm" data-act="exit">← Exit</button>
+    <span class="eyebrow">${esc(testTitle(t))} · ${t.mode}</span><span class="spacer"></span>
+    <span class="timer ${t.mode === "exam" && t.timeLeft <= 60 ? "low" : ""}" id="timer" aria-label="${t.mode === "exam" ? "Time remaining" : "Time spent"}">${t.mode === "exam" ? fmtDur(t.timeLeft) : fmtDur(t.elapsed)}</span>
+  </div>
+  <div class="track" aria-hidden="true"><i style="width:${Math.round(done / n * 100)}%"></i></div>
+  <section class="card qcard">
+    <div class="row" style="gap:8px"><span class="mono" style="color:var(--accent)">${s.code}</span><span class="eyebrow">${esc(s.name)}</span><span class="spacer"></span><span class="mono muted">Q ${i + 1} / ${n}</span></div>
+    <p class="qtext">${esc(it.q)}</p>
+    <div class="options">${it.order.map((idx, k) => optionHTML(it, k, idx, { chosen, reveal }, !reveal)).join("")}</div>
+    ${reveal ? `<div class="explain"><span class="verdict ${chosen === it.a ? "ok" : "no"}">${chosen === it.a ? "Correct" : "Incorrect. The answer is " + "ABCD"[it.order.indexOf(it.a)]}</span><span>${esc(it.e)}</span></div>` : ""}
+  </section>
+  <div class="run-nav">
+    <button class="btn" data-act="prev" ${i === 0 ? "disabled" : ""}>Previous</button>
+    <button class="btn ${t.flags[i] ? "flag-on" : ""}" data-act="flag" aria-pressed="${t.flags[i]}">${t.flags[i] ? "Flagged" : "Flag"}</button>
+    <button class="btn" data-act="grid" aria-expanded="${S.showGrid}">${S.showGrid ? "Hide" : "All"} questions</button>
+    ${i < n - 1 ? `<button class="btn primary" data-act="next">Next</button>` : `<button class="btn primary" data-act="finish">Finish test</button>`}
+  </div>
+  ${grid}
+  <div class="row"><span class="note">${done}/${n} answered · keys 1–4 to answer, ← → to move</span><span class="spacer"></span>
+    <button class="btn" data-act="save">Save &amp; exit</button>${i < n - 1 ? `<button class="btn" data-act="finish">Finish test</button>` : ""}</div>`;
+}
+
+function gauge(pct, pass) {
+  const r = 50, c = 2 * Math.PI * r, off = c * (1 - pct / 100);
+  return `<svg class="gauge" viewBox="0 0 120 120" role="img" aria-label="Score ${pct}%"><circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="10"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(${pass ? "--ok" : "--bad"})" stroke-width="10" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 60 60)"/>
+    <line x1="60" y1="4" x2="60" y2="16" stroke="var(--muted)" stroke-width="2" transform="rotate(${PASS * 3.6} 60 60)"/>
+    <text x="60" y="66" text-anchor="middle" font-family="var(--f-display)" font-weight="700" font-size="26" fill="var(--ink)">${pct}%</text></svg>`;
+}
+function breakdown(t) {
+  const m = {}; t.items.forEach((it, i) => { m[it.s] = m[it.s] || { c: 0, n: 0 }; m[it.s].n++; if (t.ans[i] === it.a) m[it.s].c++; });
+  return `<div class="prog">${Object.keys(m).sort((a, b) => SUBJ[a].code.localeCompare(SUBJ[b].code)).map(k => { const p = Math.round(m[k].c / m[k].n * 100);
+    return `<div class="prog-row"><span class="mono" style="color:var(--accent)">${SUBJ[k].code}</span><div class="prog-name"><span>${esc(SUBJ[k].name)}</span><div class="bar"><i class="${p >= PASS ? "pass" : "fail"}" style="width:${p}%"></i></div></div><span class="mono" style="text-align:right">${m[k].c}/${m[k].n}</span></div>`; }).join("")}</div>`;
+}
+function viewResult() {
+  const t = S.tests.find(x => x.id === S.resultId);
+  if (!t) return `<p>Result not found.</p>`;
+  const sc = t.score || scoreOf(t), pass = sc.pct >= PASS;
+  const wrong = t.items.filter((it, i) => t.ans[i] !== it.a).length;
+  return `<section class="card result-hero">${gauge(sc.pct, pass)}
+    <div style="display:flex;flex-direction:column;gap:8px"><span class="pill ${pass ? "pass" : "fail"}" style="align-self:flex-start">${pass ? "Pass" : "Below pass mark"}</span>
+      <h1>${pass ? "Well flown." : "Not there yet."} ${sc.correct} of ${sc.total} correct</h1>
+      <p class="muted">${esc(testTitle(t))} · ${t.mode} · completed ${esc(fmtDate(t.completedAt))} · time ${fmtDur(t.elapsed)}</p></div></section>
+  <section class="card" style="display:flex;flex-direction:column;gap:12px"><h3>By subject</h3>${breakdown(t)}</section>
+  <div class="row"><button class="btn primary" data-act="review" data-id="${t.id}">Review answers</button>
+    ${wrong ? `<button class="btn" data-act="retry-wrong" data-id="${t.id}">Practise the ${wrong} I missed</button>` : ""}
+    <button class="btn" data-act="nav" data-v="home">New test</button></div>`;
+}
+function viewReview() {
+  const t = S.tests.find(x => x.id === S.reviewId);
+  if (!t) return `<p>Test not found.</p>`;
+  const sc = t.score || scoreOf(t), pass = sc.pct >= PASS, f = S.reviewFilter;
+  const rows = t.items.map((it, i) => ({ it, i, a: t.ans[i] })).filter(r =>
+    f === "all" || (f === "wrong" && r.a !== null && r.a !== r.it.a) || (f === "skipped" && r.a === null) || (f === "flagged" && t.flags[r.i]));
+  const cnt = { wrong: t.items.filter((it, i) => t.ans[i] !== null && t.ans[i] !== it.a).length, skipped: t.ans.filter(a => a === null).length, flagged: t.flags.filter(Boolean).length };
+  const chip = (v, l) => `<button class="chip" data-act="rfilter" data-v="${v}" aria-pressed="${f === v}">${l}</button>`;
+  return `<div class="row"><button class="btn sm" data-act="nav" data-v="completed">← Completed tests</button></div>
+  <div class="section-head"><h1>${esc(testTitle(t))}</h1>
+    <p class="muted"><span class="mono">${esc(fmtDate(t.completedAt))}</span> · ${t.mode} · ${sc.correct}/${sc.total} · <b style="color:var(${pass ? "--ok" : "--bad"})">${sc.pct}% ${pass ? "Pass" : "Fail"}</b> · time ${fmtDur(t.elapsed)}</p></div>
+  <div class="chips">${chip("all", `All ${t.items.length}`)}${chip("wrong", `Incorrect ${cnt.wrong}`)}${chip("skipped", `Unanswered ${cnt.skipped}`)}${chip("flagged", `Flagged ${cnt.flagged}`)}</div>
+  ${rows.length === 0 ? `<div class="card empty"><p>No questions in this filter.</p></div>` : rows.map(({ it, i, a }) => {
+    const s = SUBJ[it.s], ok = a === it.a;
+    return `<section class="card rq"><div class="rq-head"><span class="mono muted">Q${i + 1}</span><span class="mono" style="color:var(--accent)">${s.code}</span>
+      <span class="pill ${a === null ? "mode-practice" : ok ? "pass" : "fail"}">${a === null ? "Unanswered" : ok ? "Correct" : "Incorrect"}</span>${t.flags[i] ? `<span class="pill" style="background:var(--warn-soft);color:var(--warn)">Flagged</span>` : ""}</div>
+      <p class="qtext">${esc(it.q)}</p>
+      <div class="options">${it.order.map((idx, k) => optionHTML(it, k, idx, { chosen: a, reveal: true }, false)).join("")}</div>
+      <div class="explain"><span>${esc(it.e)}</span></div></section>`;
+  }).join("")}`;
+}
+
+function renderLayer() {
+  const L = $("#layer"); let h = "";
+  if (S.modal) h += `<div class="scrim" data-act="modal-close"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-t" data-stop="1">
+    <h2 id="dlg-t">${esc(S.modal.title)}</h2><p class="muted">${esc(S.modal.body)}</p>
+    <div class="row">${S.modal.actions.map(a => `<button class="btn ${a.cls || ""}" data-act="${a.act}">${esc(a.label)}</button>`).join("")}</div></div></div>`;
+  if (S.toastMsg) h += `<div class="toast" role="status">${esc(S.toastMsg)}</div>`;
+  L.innerHTML = h;
+}
+let toastT = null;
+function toast(msg) { S.toastMsg = msg; renderLayer(); clearTimeout(toastT); toastT = setTimeout(() => { S.toastMsg = null; renderLayer(); }, 3200); }
+
+/* ---------------- Events ---------------- */
+document.addEventListener("click", async e => {
+  const el = e.target.closest("[data-act]");
+  if (!el) return;
+  if (el.dataset.act === "modal-close" && e.target.closest("[data-stop]") && !e.target.closest("button")) return;
+  const act = el.dataset.act, v = el.dataset.v, id = el.dataset.id;
+  const t = S.active;
+  switch (act) {
+    case "authtab": S.authTab = v; S.authErr = ""; render(); break;
+    case "cloud-login": startSession({ name: S.cloud.name, email: null, kind: "cloud" }); break;
+    case "signout": signOut(); break;
+    case "nav": S.view = v; S.confirmDel = null; render(); window.scrollTo(0, 0); break;
+    case "subj": { const a = S.setup.subjects; S.setup.subjects = a.includes(v) ? a.filter(x => x !== v) : [...a, v]; render(); break; }
+    case "all-subj": S.setup.subjects = S.setup.subjects.length === SUBJECTS.length ? [] : SUBJECTS.map(s => s.id); render(); break;
+    case "mode": S.setup.mode = v; render(); break;
+    case "start": openTest(createTest(S.setup)); break;
+    case "resume": { const x = S.tests.find(y => y.id === id); if (x) openTest(x); break; }
+    case "del": S.confirmDel = id; render(); break;
+    case "del-no": S.confirmDel = null; render(); break;
+    case "del-yes": S.confirmDel = null; try { await S.store.remove(id); toast("Test deleted."); } catch { toast("Couldn't delete just now. Try again."); } break;
+    case "review": S.reviewId = id; S.reviewFilter = "all"; S.view = "review"; render(); window.scrollTo(0, 0); break;
+    case "rfilter": S.reviewFilter = v; render(); break;
+    case "retry-wrong": { const x = S.tests.find(y => y.id === id); if (!x) break;
+      const items = x.items.filter((it, i) => x.ans[i] !== it.a);
+      openTest(createTest({ mode: "practice", fromItems: items, title: "Missed questions · " + testTitle(x) })); break; }
+    case "pick": if (!t) break; {
+      const idx = +v; const i = t.current;
+      if (t.mode === "practice" && t.ans[i] !== null) break;
+      t.ans[i] = idx; render(); break; }
+    case "prev": if (t && t.current > 0) { t.current--; render(); } break;
+    case "next": if (t && t.current < t.items.length - 1) { t.current++; render(); } break;
+    case "goto": if (t) { t.current = +v; render(); } break;
+    case "flag": if (t) { t.flags[t.current] = !t.flags[t.current]; render(); } break;
+    case "grid": S.showGrid = !S.showGrid; render(); break;
+    case "save": S.modal = null; await saveActive(); break;
+    case "exit": exitRun(); break;
+    case "discard": S.modal = null; stopTimer(); { const was = t && t.savedAt; S.active = null; S.view = was ? "saved" : "home"; } render(); break;
+    case "finish": {
+      const un = t.items.length - answeredCount(t);
+      S.modal = { title: "Finish and mark this test?", body: un ? `${un} question${un === 1 ? " is" : "s are"} unanswered and will be marked wrong.` : "All questions are answered. You can review every answer afterwards.",
+        actions: [{ label: "Keep going", act: "modal-close" }, { label: "Finish test", act: "finish-yes", cls: "primary" }] };
+      renderLayer(); break; }
+    case "finish-yes": await finishTest(false); break;
+    case "modal-close": S.modal = null; renderLayer(); break;
+  }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "f-count") { S.setup.count = +e.target.value; render(); }
+});
+document.addEventListener("submit", async e => {
+  if (e.target.id !== "authform") return;
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const email = String(f.get("email") || "").trim().toLowerCase(), pw = String(f.get("pw") || ""), name = String(f.get("name") || "").trim();
+  const accounts = LS.get("clearway.accounts", {});
+  S.authErr = "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { S.authErr = "Enter a valid email address."; render(); return; }
+  if (pw.length < 6) { S.authErr = "Password must be at least 6 characters."; render(); return; }
+  S.busy = true; render();
+  if (S.authTab === "signup") {
+    if (!name) { S.busy = false; S.authErr = "Enter your name."; render(); return; }
+    if (accounts[email]) { S.busy = false; S.authErr = "An account with this email already exists. Sign in instead."; render(); return; }
+    const salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    accounts[email] = { name, email, salt, hash: await hashPw(pw, salt), created: Date.now() };
+    if (!LS.set("clearway.accounts", accounts)) { S.busy = false; S.authErr = "This browser is blocking storage, so an account can't be created here. Turn off private browsing and try again."; render(); return; }
+    S.busy = false; startSession({ name, email, kind: "local" }); toast("Account created. Welcome aboard, " + name.split(" ")[0] + ".");
+  } else {
+    const acc = accounts[email];
+    if (!acc || (await hashPw(pw, acc.salt)) !== acc.hash) { S.busy = false; S.authErr = "Email or password is incorrect."; render(); return; }
+    S.busy = false; startSession({ name: acc.name, email, kind: "local" });
+  }
+});
+document.addEventListener("keydown", e => {
+  if (S.view !== "run" || S.modal || !S.active) return;
+  if (e.target.closest && e.target.closest("input,select,textarea")) return;
+  const t = S.active, it = t.items[t.current];
+  const k = e.key.toUpperCase(); let pos = "1234".indexOf(k); if (pos < 0) pos = "ABCD".indexOf(k);
+  if (pos >= 0 && e.key.length === 1) {
+    if (t.mode === "practice" && t.ans[t.current] !== null) return;
+    t.ans[t.current] = it.order[pos]; render(); return;
+  }
+  if (e.key === "ArrowRight" && t.current < t.items.length - 1) { t.current++; render(); }
+  if (e.key === "ArrowLeft" && t.current > 0) { t.current--; render(); }
+});
+
+boot();
+</script>
+
+</body></html>
